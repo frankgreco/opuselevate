@@ -1,4 +1,5 @@
 import { CanGraphic } from "./CanGraphic";
+import { WaitlistForm } from "./WaitlistForm";
 
 export function Hero() {
   return (
@@ -18,23 +19,7 @@ export function Hero() {
             A clean lift built on real ingredients. No sugar. No shortcuts. No
             afterburn — just the focus to finish what you started.
           </p>
-          <div className="flex flex-wrap items-center gap-4">
-            <a
-              href="#waitlist"
-              className="group flex items-center gap-3 rounded-full bg-foreground px-6 py-3 text-xs font-medium uppercase tracking-[0.2em] text-background transition-transform hover:scale-[1.02]"
-            >
-              Join the waitlist
-              <span className="transition-transform group-hover:translate-x-1">
-                →
-              </span>
-            </a>
-            <a
-              href="#story"
-              className="flex items-center rounded-full border border-border px-6 py-3 text-xs font-medium uppercase tracking-[0.2em] transition-colors hover:border-accent"
-            >
-              Read the brief
-            </a>
-          </div>
+          <WaitlistForm />
         </div>
         <div className="relative flex items-center justify-center">
           <CanGraphic />

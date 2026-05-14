@@ -1,17 +1,5 @@
-import { Header } from "./components/Header";
-import { Hero } from "./components/Hero";
-import { Benefits } from "./components/Benefits";
-import { Footer } from "./components/Footer";
+import { KineticPage } from "./components/KineticPage";
 
 export default function Home() {
-  return (
-    <>
-      <Header />
-      <main className="flex-1">
-        <Hero />
-        <Benefits />
-      </main>
-      <Footer />
-    </>
-  );
+  return <KineticPage />;
 }

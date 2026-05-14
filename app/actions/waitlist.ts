@@ -21,7 +21,7 @@ export async function joinWaitlist(
     return { ok: false, message: "Please enter a valid email." };
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) {
     return { ok: false, message: "Server is misconfigured." };

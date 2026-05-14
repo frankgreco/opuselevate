@@ -4,15 +4,10 @@ import { useRef, useState } from "react";
 
 type Can3DProps = {
   width?: number;
-  hint?: boolean;
   accent?: string;
 };
 
-export function Can3D({
-  width = 190,
-  hint = true,
-  accent = "#dcdcdc",
-}: Can3DProps) {
+export function Can3D({ width = 190, accent = "#dcdcdc" }: Can3DProps) {
   const [angle, setAngle] = useState(-12);
   const dragging = useRef<{ startX: number; startAngle: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -89,26 +84,6 @@ export function Can3D({
         <WireFace side="front" width={width} height={height} accent={accent} />
         <WireFace side="back" width={width} height={height} accent={accent} />
       </div>
-      {hint && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: -28,
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            fontFamily: "var(--font-mono)",
-            fontSize: 9,
-            lineHeight: 1,
-            letterSpacing: ".16em",
-            color: "rgba(255,255,255,.4)",
-            textTransform: "uppercase",
-            pointerEvents: "none",
-          }}
-        >
-          drag to rotate
-        </div>
-      )}
     </div>
   );
 }

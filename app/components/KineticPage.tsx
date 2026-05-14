@@ -166,7 +166,7 @@ export function KineticPage() {
               transform: `translateY(${scrollY * -0.04}px)`,
             }}
           >
-            <Can3D width={190} hint accent="var(--accent)" />
+            <Can3D width={190} accent="var(--accent)" />
           </div>
 
           <p

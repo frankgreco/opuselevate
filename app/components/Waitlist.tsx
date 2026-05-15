@@ -91,10 +91,7 @@ export function Waitlist({ state, onSubmitted }: WaitlistProps) {
         onSubmit={onSubmit}
         style={{
           display: "flex",
-          gap: 6,
-          padding: 5,
-          border: ".5px solid var(--hair)",
-          borderRadius: 999,
+          gap: 8,
         }}
       >
         <input
@@ -107,7 +104,7 @@ export function Waitlist({ state, onSubmitted }: WaitlistProps) {
           style={{
             flex: 1,
             background: "transparent",
-            border: "none",
+            border: ".5px solid var(--hair)",
             outline: "none",
             minWidth: 0,
             padding: "12px 16px",
@@ -132,7 +129,7 @@ export function Waitlist({ state, onSubmitted }: WaitlistProps) {
             lineHeight: 1,
             letterSpacing: ".24em",
             textTransform: "uppercase",
-            borderRadius: 999,
+            borderRadius: 0,
             opacity: pending ? 0.6 : 1,
           }}
         >

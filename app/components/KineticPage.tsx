@@ -1,7 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import { type CSSProperties, useEffect, useState } from "react";
-import { Can3D } from "./Can3D";
 import { Reveal } from "./Reveal";
 import { Waitlist, type WaitlistState } from "./Waitlist";
 
@@ -27,20 +27,12 @@ export function KineticPage() {
   const onSubmitted = (position: number) =>
     setWaitlist({ submitted: true, position });
 
-  const headerScrolled = scrollY > 30;
-
   return (
     <div style={{ background: "var(--background)", color: "var(--foreground)" }}>
       {/* Header */}
       <header
         style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 30,
           padding: "18px 20px 14px",
-          background: headerScrolled ? "var(--background)" : "transparent",
-          borderBottom: headerScrolled ? ".5px solid var(--hair)" : "none",
-          transition: "background .2s, border-color .2s",
         }}
       >
         <div
@@ -51,12 +43,11 @@ export function KineticPage() {
             alignItems: "center",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/logo.svg"
             alt="Beyond Opus"
-            width={56}
-            height={31}
+            width={340}
+            height={128}
             style={{ display: "block", height: 28, width: "auto" }}
           />
           <span className="sr-only">Beyond Opus</span>
@@ -99,7 +90,7 @@ export function KineticPage() {
             style={{
               ...CN,
               fontWeight: 900,
-              fontSize: 220,
+              fontSize: "clamp(84px, 28vw, 220px)",
               lineHeight: 0.85,
               letterSpacing: ".02em",
               color: "rgba(246,244,239,.05)",
@@ -118,23 +109,9 @@ export function KineticPage() {
             zIndex: 2,
             display: "flex",
             flexDirection: "column",
-            minHeight: 780 - PAD - PAD / 2,
+            minHeight: 660 - PAD - PAD / 2,
           }}
         >
-          <div
-            style={{
-              ...MONO,
-              fontSize: 9,
-              lineHeight: 1.6,
-              letterSpacing: ".24em",
-              color: "var(--dim)",
-              textTransform: "uppercase",
-              marginTop: 8,
-            }}
-          >
-            ● 00 · Elevate — Q3 2026
-          </div>
-
           <h1
             className="max-w-[11ch]"
             style={{
@@ -157,28 +134,27 @@ export function KineticPage() {
               alignItems: "center",
               justifyContent: "center",
               position: "relative",
-              minHeight: 280,
-              marginTop: 12,
+              minHeight: 140,
+              marginTop: 0,
               transform: `translateY(${scrollY * -0.04}px)`,
             }}
           >
-            <Can3D width={190} accent="var(--accent)" />
+            <Image
+              src="/can.png"
+              alt="Elevate can"
+              width={768}
+              height={1360}
+              preload
+              style={{
+                width: 240,
+                height: "auto",
+                display: "block",
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+              draggable={false}
+            />
           </div>
-
-          <p
-            style={{
-              ...MONO,
-              fontSize: 13,
-              lineHeight: 1.55,
-              color: "var(--dim)",
-              letterSpacing: ".01em",
-              margin: "0 0 18px",
-              maxWidth: 320,
-            }}
-          >
-            Caffeine to climb. Nootropics to think. Adaptogens to land — no
-            crash. Coming this fall.
-          </p>
 
           <Waitlist state={waitlist} onSubmitted={onSubmitted} />
         </div>
@@ -198,28 +174,31 @@ export function KineticPage() {
             <div
               key={k}
               style={{
-                ...CN,
-                fontWeight: 700,
                 display: "flex",
-                gap: 18,
-                paddingRight: 18,
+                gap: 56,
+                paddingRight: 56,
                 flexShrink: 0,
-                fontSize: 42,
-                lineHeight: 1,
-                letterSpacing: ".02em",
-                textTransform: "uppercase",
                 alignItems: "center",
                 whiteSpace: "nowrap",
               }}
             >
-              <span>Climb.</span>
-              <span style={{ color: "var(--dim)" }}>●</span>
-              <span>Plateau.</span>
-              <span style={{ color: "var(--dim)" }}>●</span>
-              <span>Sustain.</span>
-              <span style={{ color: "var(--dim)" }}>●</span>
-              <span style={{ color: "var(--accent)" }}>Land.</span>
-              <span style={{ color: "var(--dim)" }}>●</span>
+              {LOGOS.map((logo) => (
+                <Image
+                  key={logo.src}
+                  src={logo.src}
+                  alt={logo.alt}
+                  width={logo.w}
+                  height={logo.intrinsicH}
+                  style={{
+                    height: logo.h,
+                    width: "auto",
+                    display: "block",
+                    objectFit: "contain",
+                    opacity: 0.7,
+                    filter: logo.invert ? "invert(1)" : undefined,
+                  }}
+                />
+              ))}
             </div>
           ))}
         </div>
@@ -507,54 +486,27 @@ export function KineticPage() {
           <Waitlist state={waitlist} onSubmitted={onSubmitted} />
         </div>
       </section>
-
-      {/* FOOTER */}
-      <footer
-        style={{
-          padding: "32px 20px 64px",
-          borderTop: ".5px solid var(--hair)",
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          lineHeight: 1.7,
-          color: "var(--dim)",
-          letterSpacing: ".05em",
-        }}
-      >
-        <div className={CONTENT}>
-          <div
-            style={{
-              ...CN,
-              fontWeight: 700,
-              fontSize: 16,
-              lineHeight: 1,
-              letterSpacing: ".04em",
-              color: "var(--foreground)",
-              marginBottom: 12,
-            }}
-          >
-            Beyond Opus
-          </div>
-          <div>Brooklyn, NY · MMXXVI</div>
-          <div
-            style={{
-              marginTop: 16,
-              display: "flex",
-              gap: 20,
-              color: "var(--dim)",
-              textTransform: "uppercase",
-              letterSpacing: ".18em",
-              fontSize: 9,
-            }}
-          >
-            <span>Privacy</span>
-            <span>Contact</span>
-            <span>Instagram</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
+
+type Logo = {
+  src: string;
+  alt: string;
+  w: number;
+  intrinsicH: number;
+  h: number;
+  invert?: boolean;
+};
+
+const LOGOS: readonly Logo[] = [
+  { src: "/logos/nasa.png", alt: "NASA", w: 479, intrinsicH: 133, h: 30, invert: true },
+  { src: "/logos/ted.png", alt: "TED", w: 1280, intrinsicH: 470, h: 36, invert: true },
+  { src: "/logos/olympics.svg", alt: "Olympics", w: 1020, intrinsicH: 495, h: 32 },
+  { src: "/logos/ferrari.webp", alt: "Ferrari", w: 800, intrinsicH: 800, h: 48 },
+  { src: "/logos/fide.png", alt: "FIDE", w: 300, intrinsicH: 249, h: 48 },
+  { src: "/logos/harvard.png", alt: "Harvard", w: 202, intrinsicH: 249, h: 52, invert: true },
+];
 
 const STACK = [
   {

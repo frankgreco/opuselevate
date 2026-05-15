@@ -15,19 +15,33 @@ export function Reveal({ children, className, style, delay = 0 }: RevealProps) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const show = () => el.setAttribute("data-rev", "1");
+
+    if (typeof IntersectionObserver === "undefined") {
+      show();
+      return;
+    }
+
+    // Safety net: ensure content always reveals even if IO never fires
+    // (iOS Safari can miss events in some scroll/restore states).
+    const fallback = window.setTimeout(show, 1200);
+
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            el.setAttribute("data-rev", "1");
+            show();
             io.unobserve(el);
           }
         });
       },
-      { threshold: 0.15 },
+      { threshold: 0.05, rootMargin: "0px 0px -10% 0px" },
     );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      window.clearTimeout(fallback);
+      io.disconnect();
+    };
   }, []);
 
   return (

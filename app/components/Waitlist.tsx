@@ -109,7 +109,8 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
             border: ".5px solid var(--hair)",
             outline: "none",
             minWidth: 0,
-            padding: "12px 16px",
+            height: 44,
+            padding: "0 16px",
             fontFamily: "var(--font-mono)",
             fontSize: 16,
             lineHeight: 1,
@@ -121,10 +122,14 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           type="submit"
           disabled={pending}
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
             background: "var(--foreground)",
             color: "var(--background)",
             border: "none",
-            padding: "12px 18px",
+            height: 44,
+            padding: "0 18px",
             cursor: pending ? "default" : "pointer",
             fontFamily: "var(--font-mono)",
             fontSize: 10,

@@ -10,6 +10,9 @@ const CN: CSSProperties = { fontFamily: "var(--font-cn)", fontStyle: "normal" };
 const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 
 const PAD = 48;
+const SECTION_Y = "clamp(48px, 9vh, 128px)";
+const CARD_GAP = "clamp(10px, 1.5vh, 22px)";
+const HEADING_GAP = "clamp(28px, 4vh, 56px)";
 const CONTENT = "mx-auto w-full max-w-[480px]";
 
 export function KineticPage() {
@@ -197,7 +200,7 @@ export function KineticPage() {
       <LogoMarquee />
 
       {/* THE STACK */}
-      <section style={{ padding: `${PAD}px 20px` }}>
+      <section style={{ padding: `${SECTION_Y} 20px` }}>
         <div className={CONTENT}>
           <Reveal>
             <h2
@@ -219,10 +222,10 @@ export function KineticPage() {
 
           <div
             style={{
-              marginTop: 28,
+              marginTop: HEADING_GAP,
               display: "flex",
               flexDirection: "column",
-              gap: 10,
+              gap: CARD_GAP,
             }}
           >
             {STACK.map((c) => (
@@ -337,7 +340,7 @@ export function KineticPage() {
       {/* FAQ */}
       <section
         style={{
-          padding: `${PAD}px 20px`,
+          padding: `${SECTION_Y} 20px`,
         }}
       >
         <div className={CONTENT}>
@@ -356,7 +359,7 @@ export function KineticPage() {
               The fine print.
             </h2>
           </Reveal>
-          <div style={{ marginTop: 18 }}>
+          <div style={{ marginTop: HEADING_GAP }}>
             {FAQ.map(([q, a]) => (
               <details
                 key={q}
@@ -426,7 +429,7 @@ export function KineticPage() {
       {/* OUTRO */}
       <section
         style={{
-          padding: `${PAD}px 20px ${PAD}px`,
+          padding: `${SECTION_Y} 20px`,
           textAlign: "center",
         }}
       >

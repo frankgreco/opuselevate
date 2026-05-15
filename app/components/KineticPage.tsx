@@ -434,22 +434,6 @@ export function KineticPage() {
         }}
       >
         <div className={CONTENT}>
-          <Reveal>
-            <p
-              style={{
-                ...MONO,
-                fontSize: 13,
-                lineHeight: 1.55,
-                color: "var(--dim)",
-                letterSpacing: ".01em",
-                margin: "0 auto 28px",
-                maxWidth: 320,
-              }}
-            >
-              Caffeine to climb. Nootropics to think. Adaptogens to land — no
-              crash. Coming this fall.
-            </p>
-          </Reveal>
           <Waitlist state={waitlist} onSubmitted={onSubmitted} />
         </div>
       </section>

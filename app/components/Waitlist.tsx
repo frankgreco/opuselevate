@@ -11,6 +11,7 @@ export type WaitlistState = {
 type WaitlistProps = {
   state: WaitlistState;
   onSubmitted: (position: number) => void;
+  inputId?: string;
 };
 
 const BASE_POSITION = 2106;
@@ -23,7 +24,7 @@ function hashEmail(email: string): number {
   return BASE_POSITION + (h % 400);
 }
 
-export function Waitlist({ state, onSubmitted }: WaitlistProps) {
+export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -95,6 +96,7 @@ export function Waitlist({ state, onSubmitted }: WaitlistProps) {
         }}
       >
         <input
+          id={inputId}
           type="email"
           required
           value={email}
@@ -133,7 +135,7 @@ export function Waitlist({ state, onSubmitted }: WaitlistProps) {
             opacity: pending ? 0.6 : 1,
           }}
         >
-          {pending ? "Joining…" : "Join →"}
+          {pending ? "Joining…" : "Join"}
         </button>
       </form>
       {error && (

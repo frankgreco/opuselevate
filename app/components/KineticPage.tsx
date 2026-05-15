@@ -1,28 +1,22 @@
 "use client";
 
 import Image from "next/image";
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useState } from "react";
+import { LogoMarquee } from "./LogoMarquee";
 import { Reveal } from "./Reveal";
 import { Waitlist, type WaitlistState } from "./Waitlist";
 
 const CN: CSSProperties = { fontFamily: "var(--font-cn)", fontStyle: "normal" };
 const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 
-const PAD = 56;
+const PAD = 48;
 const CONTENT = "mx-auto w-full max-w-[480px]";
 
 export function KineticPage() {
-  const [scrollY, setScrollY] = useState(0);
   const [waitlist, setWaitlist] = useState<WaitlistState>({
     submitted: false,
     position: null,
   });
-
-  useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const onSubmitted = (position: number) =>
     setWaitlist({ submitted: true, position });
@@ -52,17 +46,44 @@ export function KineticPage() {
             style={{ display: "block", height: 28, width: "auto" }}
           />
           <span className="sr-only">Beyond Opus</span>
-          <span
-            style={{
-              ...MONO,
-              fontSize: 9,
-              lineHeight: 1,
-              letterSpacing: ".24em",
-              color: "var(--dim)",
-            }}
-          >
-            {waitlist.submitted ? "● FILED" : "● COMING SOON"}
-          </span>
+          {waitlist.submitted ? (
+            <span
+              style={{
+                ...MONO,
+                fontSize: 9,
+                lineHeight: 1,
+                letterSpacing: ".24em",
+                color: "var(--dim)",
+              }}
+            >
+              ● FILED
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("waitlist-email-hero");
+                if (!el) return;
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+                (el as HTMLInputElement).focus({ preventScroll: true });
+              }}
+              style={{
+                ...MONO,
+                background: "var(--foreground)",
+                color: "var(--background)",
+                border: "none",
+                padding: "8px 14px",
+                cursor: "pointer",
+                fontSize: 9,
+                lineHeight: 1,
+                letterSpacing: ".24em",
+                textTransform: "uppercase",
+                borderRadius: 0,
+              }}
+            >
+              Join
+            </button>
+          )}
         </div>
       </header>
 
@@ -87,7 +108,6 @@ export function KineticPage() {
             alignItems: "center",
             justifyContent: "center",
             pointerEvents: "none",
-            transform: `translateY(${scrollY * -0.15}px)`,
           }}
         >
           <div
@@ -142,7 +162,6 @@ export function KineticPage() {
               position: "relative",
               minHeight: 0,
               marginTop: 0,
-              transform: `translateY(${scrollY * -0.04}px)`,
             }}
           >
             <Image
@@ -155,7 +174,7 @@ export function KineticPage() {
                 width: "auto",
                 height: "100%",
                 maxHeight: "100%",
-                maxWidth: 240,
+                maxWidth: "clamp(240px, 32vw, 460px)",
                 objectFit: "contain",
                 display: "block",
                 userSelect: "none",
@@ -165,54 +184,17 @@ export function KineticPage() {
             />
           </div>
 
-          <Waitlist state={waitlist} onSubmitted={onSubmitted} />
+          <Waitlist
+            state={waitlist}
+            onSubmitted={onSubmitted}
+            inputId="waitlist-email-hero"
+          />
         </div>
       </section>
       </div>
 
       {/* MARQUEE */}
-      <section
-        style={{
-          borderTop: ".5px solid var(--hair)",
-          borderBottom: ".5px solid var(--hair)",
-          padding: "20px 0",
-          overflow: "hidden",
-        }}
-      >
-        <div className="km-marquee">
-          {[0, 1].map((k) => (
-            <div
-              key={k}
-              style={{
-                display: "flex",
-                gap: 56,
-                paddingRight: 56,
-                flexShrink: 0,
-                alignItems: "center",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {LOGOS.map((logo) => (
-                <Image
-                  key={logo.src}
-                  src={logo.src}
-                  alt={logo.alt}
-                  width={logo.w}
-                  height={logo.intrinsicH}
-                  style={{
-                    height: logo.h,
-                    width: "auto",
-                    display: "block",
-                    objectFit: "contain",
-                    opacity: 0.7,
-                    filter: logo.invert ? "invert(1)" : undefined,
-                  }}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      </section>
+      <LogoMarquee />
 
       {/* THE STACK */}
       <section style={{ padding: `${PAD}px 20px` }}>
@@ -444,7 +426,7 @@ export function KineticPage() {
       {/* OUTRO */}
       <section
         style={{
-          padding: `${PAD * 1.2}px 20px ${PAD}px`,
+          padding: `${PAD}px 20px ${PAD}px`,
           textAlign: "center",
         }}
       >
@@ -471,24 +453,6 @@ export function KineticPage() {
     </div>
   );
 }
-
-type Logo = {
-  src: string;
-  alt: string;
-  w: number;
-  intrinsicH: number;
-  h: number;
-  invert?: boolean;
-};
-
-const LOGOS: readonly Logo[] = [
-  { src: "/logos/nasa.png", alt: "NASA", w: 479, intrinsicH: 133, h: 30, invert: true },
-  { src: "/logos/ted.png", alt: "TED", w: 1280, intrinsicH: 470, h: 36, invert: true },
-  { src: "/logos/olympics.svg", alt: "Olympics", w: 1020, intrinsicH: 495, h: 32 },
-  { src: "/logos/ferrari.webp", alt: "Ferrari", w: 800, intrinsicH: 800, h: 48 },
-  { src: "/logos/fide.png", alt: "FIDE", w: 300, intrinsicH: 249, h: 48 },
-  { src: "/logos/harvard.png", alt: "Harvard", w: 202, intrinsicH: 249, h: 52, invert: true },
-];
 
 const STACK = [
   {

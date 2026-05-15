@@ -99,7 +99,7 @@ export function Waitlist({ state, onSubmitted }: WaitlistProps) {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@domain.com"
+          placeholder="your@email.com"
           aria-label="Email address"
           style={{
             flex: 1,
@@ -109,7 +109,7 @@ export function Waitlist({ state, onSubmitted }: WaitlistProps) {
             minWidth: 0,
             padding: "12px 16px",
             fontFamily: "var(--font-mono)",
-            fontSize: 13,
+            fontSize: 16,
             lineHeight: 1,
             letterSpacing: ".01em",
             color: "var(--foreground)",

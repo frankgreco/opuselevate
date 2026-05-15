@@ -29,6 +29,7 @@ export function KineticPage() {
 
   return (
     <div style={{ background: "var(--background)", color: "var(--foreground)" }}>
+      <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <header
         style={{
@@ -69,9 +70,12 @@ export function KineticPage() {
       <section
         style={{
           position: "relative",
-          minHeight: 780,
+          flex: 1,
+          minHeight: 0,
           padding: `${PAD / 2}px 20px ${PAD}px`,
           overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <div
@@ -109,7 +113,9 @@ export function KineticPage() {
             zIndex: 2,
             display: "flex",
             flexDirection: "column",
-            minHeight: 660 - PAD - PAD / 2,
+            flex: 1,
+            minHeight: 0,
+            width: "100%",
           }}
         >
           <h1
@@ -134,7 +140,7 @@ export function KineticPage() {
               alignItems: "center",
               justifyContent: "center",
               position: "relative",
-              minHeight: 140,
+              minHeight: 0,
               marginTop: 0,
               transform: `translateY(${scrollY * -0.04}px)`,
             }}
@@ -146,8 +152,11 @@ export function KineticPage() {
               height={1360}
               preload
               style={{
-                width: 240,
-                height: "auto",
+                width: "auto",
+                height: "100%",
+                maxHeight: "100%",
+                maxWidth: 240,
+                objectFit: "contain",
                 display: "block",
                 userSelect: "none",
                 pointerEvents: "none",
@@ -159,6 +168,7 @@ export function KineticPage() {
           <Waitlist state={waitlist} onSubmitted={onSubmitted} />
         </div>
       </section>
+      </div>
 
       {/* MARQUEE */}
       <section
@@ -208,19 +218,6 @@ export function KineticPage() {
       <section style={{ padding: `${PAD}px 20px` }}>
         <div className={CONTENT}>
           <Reveal>
-            <div
-              style={{
-                ...MONO,
-                fontSize: 10,
-                lineHeight: 1,
-                letterSpacing: ".3em",
-                color: "var(--dim)",
-                marginBottom: 14,
-                textTransform: "uppercase",
-              }}
-            >
-              ● 02 — The Stack
-            </div>
             <h2
               style={{
                 ...CN,
@@ -359,32 +356,19 @@ export function KineticPage() {
       <section
         style={{
           padding: `${PAD}px 20px`,
-          borderTop: ".5px solid var(--hair)",
         }}
       >
         <div className={CONTENT}>
           <Reveal>
-            <div
-              style={{
-                ...MONO,
-                fontSize: 10,
-                lineHeight: 1,
-                letterSpacing: ".3em",
-                color: "var(--dim)",
-                marginBottom: 14,
-                textTransform: "uppercase",
-              }}
-            >
-              ● 03 — Query
-            </div>
             <h2
               style={{
                 ...CN,
-                fontWeight: 700,
-                fontSize: "clamp(28px, 8vw, 38px)",
-                lineHeight: 1,
+                fontWeight: 900,
+                fontSize: "clamp(38px, 11vw, 56px)",
+                lineHeight: 0.95,
                 letterSpacing: ".005em",
                 margin: 0,
+                textWrap: "pretty" as CSSProperties["textWrap"],
               }}
             >
               The fine print.
@@ -461,27 +445,25 @@ export function KineticPage() {
       <section
         style={{
           padding: `${PAD * 1.2}px 20px ${PAD}px`,
-          borderTop: ".5px solid var(--hair)",
           textAlign: "center",
         }}
       >
         <div className={CONTENT}>
           <Reveal>
-            <div
+            <p
               style={{
-                ...CN,
-                fontWeight: 900,
-                fontSize: "clamp(64px, 20vw, 100px)",
-                lineHeight: 0.88,
+                ...MONO,
+                fontSize: 13,
+                lineHeight: 1.55,
+                color: "var(--dim)",
                 letterSpacing: ".01em",
-                textWrap: "pretty" as CSSProperties["textWrap"],
-                marginBottom: 28,
+                margin: "0 auto 28px",
+                maxWidth: 320,
               }}
             >
-              For the hours
-              <br />
-              <span style={{ color: "var(--accent)" }}>that count.</span>
-            </div>
+              Caffeine to climb. Nootropics to think. Adaptogens to land — no
+              crash. Coming this fall.
+            </p>
           </Reveal>
           <Waitlist state={waitlist} onSubmitted={onSubmitted} />
         </div>

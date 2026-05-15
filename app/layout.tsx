@@ -8,7 +8,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Beyond Opus · Elevate — Moments that matter.",
+  title: "Beyond Opus · Elevate — For moments that matter.",
   description:
     "Caffeine to climb. Nootropics to think. Adaptogens to land — no crash. Coming Q3 2026.",
 };

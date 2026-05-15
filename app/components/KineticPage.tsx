@@ -51,17 +51,15 @@ export function KineticPage() {
             alignItems: "center",
           }}
         >
-          <span
-            style={{
-              ...CN,
-              fontWeight: 700,
-              fontSize: 14,
-              lineHeight: 1,
-              letterSpacing: ".04em",
-            }}
-          >
-            Beyond Opus
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.svg"
+            alt="Beyond Opus"
+            width={56}
+            height={31}
+            style={{ display: "block", height: 28, width: "auto" }}
+          />
+          <span className="sr-only">Beyond Opus</span>
           <span
             style={{
               ...MONO,
@@ -138,20 +136,18 @@ export function KineticPage() {
           </div>
 
           <h1
+            className="max-w-[11ch]"
             style={{
               ...CN,
               fontWeight: 900,
               marginTop: 14,
               marginBottom: 0,
-              fontSize: "clamp(56px, 18vw, 84px)",
+              fontSize: "clamp(48px, 15vw, 72px)",
               lineHeight: 0.9,
               letterSpacing: ".005em",
-              textWrap: "pretty" as CSSProperties["textWrap"],
             }}
           >
-            Moments
-            <br />
-            <span style={{ color: "var(--accent)" }}>that matter.</span>
+            <span>For moments that matter.</span>
           </h1>
 
           <div

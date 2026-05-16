@@ -97,7 +97,7 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
                 boxShadow: "0 4px 14px rgba(0, 0, 0, 0.35)",
               }}
             >
-              Get Early Access
+              Early Access
             </button>
           )}
         </div>
@@ -116,35 +116,7 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
           flexDirection: "column",
         }}
       >
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-            zIndex: 1,
-          }}
-        >
-          <div
-            style={{
-              ...CN,
-              fontWeight: 900,
-              fontSize: "clamp(84px, 28vw, 220px)",
-              lineHeight: 0.85,
-              letterSpacing: ".02em",
-              color: "rgba(246,244,239,.22)",
-              textTransform: "uppercase",
-              whiteSpace: "nowrap",
-            }}
-          >
-            ELEVATE
-          </div>
-        </div>
-
-        {/* Can: absolutely centered in the section so it shares ELEVATE's vertical center. */}
+        {/* Can: absolutely centered in the section. */}
         <div
           style={{
             position: "absolute",
@@ -234,7 +206,7 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
                 textWrap: "pretty" as CSSProperties["textWrap"],
               }}
             >
-              Elevate
+              Live elevated.
             </h2>
           </Reveal>
 
@@ -324,95 +296,6 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section
-        style={{
-          padding: `${SECTION_Y} 20px`,
-        }}
-      >
-        <div className={CONTENT}>
-          <Reveal>
-            <h2
-              style={{
-                ...CN,
-                fontWeight: 900,
-                fontSize: "clamp(38px, 11vw, 56px)",
-                lineHeight: 0.95,
-                letterSpacing: ".005em",
-                margin: 0,
-                textWrap: "pretty" as CSSProperties["textWrap"],
-              }}
-            >
-              The fine print.
-            </h2>
-          </Reveal>
-          <div style={{ marginTop: HEADING_GAP }}>
-            {FAQ.map(([q, a]) => (
-              <details
-                key={q}
-                className="km-faq"
-                style={{
-                  borderTop: ".5px solid var(--hair)",
-                  padding: "18px 0",
-                }}
-              >
-                <summary
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 12,
-                  }}
-                >
-                  <span
-                    style={{
-                      ...CN,
-                      fontWeight: 700,
-                      fontSize: 17,
-                      lineHeight: 1.3,
-                      letterSpacing: ".005em",
-                    }}
-                  >
-                    {q}
-                  </span>
-                  <span
-                    className="km-plus"
-                    style={{
-                      ...MONO,
-                      width: 24,
-                      height: 24,
-                      borderRadius: 999,
-                      border: ".5px solid var(--hair)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 12,
-                      lineHeight: 1,
-                      color: "var(--dim)",
-                      transition: "transform .25s",
-                      flex: "0 0 auto",
-                    }}
-                  >
-                    +
-                  </span>
-                </summary>
-                <p
-                  style={{
-                    marginTop: 10,
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 12,
-                    lineHeight: 1.55,
-                    color: "var(--dim)",
-                  }}
-                >
-                  {a}
-                </p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* OUTRO */}
       <section
         style={{
@@ -451,19 +334,3 @@ const STACK = [
     hue: "#5a8a9e",
   },
 ] as const;
-
-const FAQ: ReadonlyArray<readonly [string, string]> = [
-  [
-    "When does it ship?",
-    "Q3 2026. Waitlist members get first allocation — and a launch discount.",
-  ],
-  [
-    "Caffeine?",
-    "120 mg, split 60/40 anhydrous and guarana. Climb is staggered, not spiked.",
-  ],
-  ["Will I crash?", "No. Adaptogens carry the landing through hour four."],
-  [
-    "Where will it ship?",
-    "CONUS, UK, EU at launch. 48h dispatch. Carbon-neutral.",
-  ],
-];

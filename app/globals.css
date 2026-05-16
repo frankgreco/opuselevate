@@ -81,17 +81,6 @@ body {
   animation: km-marquee 28s linear infinite;
 }
 
-.km-faq summary {
-  cursor: pointer;
-  list-style: none;
-}
-.km-faq summary::-webkit-details-marker {
-  display: none;
-}
-.km-faq[open] .km-plus {
-  transform: rotate(45deg);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .km-marquee {
     animation: none;
@@ -99,9 +88,6 @@ body {
   [data-rev] {
     opacity: 1;
     transform: none;
-    transition: none;
-  }
-  .km-plus {
     transition: none;
   }
 }

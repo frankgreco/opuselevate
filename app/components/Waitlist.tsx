@@ -139,7 +139,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
             opacity: pending ? 0.6 : 1,
           }}
         >
-          {pending ? "Submitting…" : "Get Early Access"}
+          {pending ? "Submitting…" : "Early Access"}
         </button>
       </form>
       {error && (

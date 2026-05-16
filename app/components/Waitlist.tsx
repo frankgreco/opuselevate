@@ -90,9 +90,9 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
     <>
       <form
         onSubmit={onSubmit}
+        className="gap-1.5 sm:gap-2"
         style={{
           display: "flex",
-          gap: 8,
         }}
       >
         <input
@@ -103,6 +103,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           aria-label="Email address"
+          className="px-2.5 sm:px-4"
           style={{
             flex: 1,
             background: "transparent",
@@ -110,9 +111,8 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
             outline: "none",
             minWidth: 0,
             height: 44,
-            padding: "0 16px",
             fontFamily: "var(--font-mono)",
-            fontSize: 16,
+            fontSize: 10,
             lineHeight: 1,
             letterSpacing: ".01em",
             color: "var(--foreground)",
@@ -121,6 +121,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
         <button
           type="submit"
           disabled={pending}
+          className="px-2.5 sm:px-[18px] tracking-[.14em] sm:tracking-[.24em]"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -129,18 +130,16 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
             color: "var(--background)",
             border: "none",
             height: 44,
-            padding: "0 18px",
             cursor: pending ? "default" : "pointer",
             fontFamily: "var(--font-mono)",
             fontSize: 10,
             lineHeight: 1,
-            letterSpacing: ".24em",
             textTransform: "uppercase",
             borderRadius: 0,
             opacity: pending ? 0.6 : 1,
           }}
         >
-          {pending ? "Joining…" : "Join"}
+          {pending ? "Submitting…" : "Get Early Access"}
         </button>
       </form>
       {error && (

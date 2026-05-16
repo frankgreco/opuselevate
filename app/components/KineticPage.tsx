@@ -84,7 +84,7 @@ export function KineticPage() {
                 borderRadius: 0,
               }}
             >
-              Join
+              Get Early Access
             </button>
           )}
         </div>
@@ -214,9 +214,7 @@ export function KineticPage() {
                 textWrap: "pretty" as CSSProperties["textWrap"],
               }}
             >
-              Three vectors,
-              <br />
-              one <span style={{ color: "var(--accent)" }}>curve</span>.
+              Elevate
             </h2>
           </Reveal>
 
@@ -258,43 +256,12 @@ export function KineticPage() {
                   {c.tag}
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "baseline",
-                    position: "relative",
-                  }}
-                >
-                  <span
-                    style={{
-                      ...MONO,
-                      fontSize: 9,
-                      lineHeight: 1,
-                      letterSpacing: ".24em",
-                      color: c.hue,
-                    }}
-                  >
-                    ● {c.range}
-                  </span>
-                  <span
-                    style={{
-                      ...MONO,
-                      fontSize: 9,
-                      lineHeight: 1,
-                      letterSpacing: ".24em",
-                      color: "var(--dim)",
-                    }}
-                  >
-                    0{c.tag.slice(1)} / 03
-                  </span>
-                </div>
                 <h3
                   style={{
                     ...CN,
                     fontWeight: 900,
                     position: "relative",
-                    marginTop: 14,
+                    marginTop: 0,
                     marginBottom: 18,
                     fontSize: 44,
                     lineHeight: 0.95,
@@ -446,7 +413,7 @@ const STACK = [
     tag: "01",
     name: "Energy",
     range: "0–20 MIN",
-    ings: ["Caffeine 180", "Taurine 750", "ALCAR 500"],
+    ings: ["Caffeine 120", "Taurine 750", "ALCAR 500"],
     hue: "#d97a4a",
   },
   {
@@ -472,7 +439,7 @@ const FAQ: ReadonlyArray<readonly [string, string]> = [
   ],
   [
     "Caffeine?",
-    "180 mg, split 60/40 anhydrous and guarana. Climb is staggered, not spiked.",
+    "120 mg, split 60/40 anhydrous and guarana. Climb is staggered, not spiked.",
   ],
   ["Will I crash?", "No. Adaptogens carry the landing through hour four."],
   [

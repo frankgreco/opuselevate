@@ -116,45 +116,9 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
           flexDirection: "column",
         }}
       >
-        {/* Can: absolutely centered in the section. */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-            zIndex: 2,
-            padding: "clamp(110px, 22vh, 180px) 20px",
-          }}
-        >
-          <Image
-            src="/can-v3.png"
-            alt="Elevate can"
-            width={1536}
-            height={2752}
-            preload
-            sizes="(max-width: 768px) 60vw, 460px"
-            style={{
-              width: "auto",
-              height: "100%",
-              maxHeight: "100%",
-              maxWidth: "clamp(240px, 32vw, 460px)",
-              objectFit: "contain",
-              display: "block",
-              userSelect: "none",
-              pointerEvents: "none",
-            }}
-            draggable={false}
-          />
-        </div>
-
         <div
           className={CONTENT}
           style={{
-            position: "relative",
-            zIndex: 2,
             display: "flex",
             flexDirection: "column",
             flex: 1,
@@ -163,21 +127,50 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
           }}
         >
           <h1
-            className="max-w-[11ch]"
+            className="mx-auto max-w-[11ch]"
             style={{
               ...CN,
               fontWeight: 900,
               marginTop: 14,
               marginBottom: 0,
-              fontSize: "clamp(48px, 15vw, 72px)",
+              fontSize: "clamp(36px, 11.25vw, 54px)",
               lineHeight: 0.9,
               letterSpacing: ".005em",
+              textAlign: "center",
             }}
           >
             <span>For moments that matter.</span>
           </h1>
 
-          <div style={{ flex: 1, minHeight: 0 }} />
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Image
+              src="/can-v3.png"
+              alt="Elevate can"
+              width={1536}
+              height={2752}
+              preload
+              sizes="(max-width: 768px) 60vw, 460px"
+              style={{
+                width: "auto",
+                height: "100%",
+                maxHeight: "100%",
+                maxWidth: 460,
+                objectFit: "contain",
+                display: "block",
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+              draggable={false}
+            />
+          </div>
 
           <Waitlist
             state={waitlist}
@@ -199,10 +192,11 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
               style={{
                 ...CN,
                 fontWeight: 900,
-                fontSize: "clamp(38px, 11vw, 56px)",
+                fontSize: "clamp(29px, 8.25vw, 42px)",
                 lineHeight: 0.95,
                 letterSpacing: ".005em",
                 margin: 0,
+                textAlign: "center",
                 textWrap: "pretty" as CSSProperties["textWrap"],
               }}
             >
@@ -225,7 +219,7 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
                   padding: 22,
                   border: ".5px solid var(--hair)",
                   borderRadius: 4,
-                  background: "rgba(255,255,255,.02)",
+                  background: "rgba(196,196,196,.02)",
                   position: "relative",
                   overflow: "hidden",
                 }}
@@ -242,7 +236,7 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
                     fontSize: 140,
                     lineHeight: 1,
                     letterSpacing: ".02em",
-                    color: "rgba(246,244,239,.05)",
+                    color: "rgba(196,196,196,.05)",
                   }}
                 >
                   {c.tag}

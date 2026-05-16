@@ -24,9 +24,9 @@
 
 :root {
   --background: #0c0c0c;
-  --foreground: #f6f4ef;
-  --dim: rgba(246, 244, 239, 0.55);
-  --hair: rgba(246, 244, 239, 0.13);
+  --foreground: #c4c4c4;
+  --dim: rgba(196, 196, 196, 0.55);
+  --hair: rgba(196, 196, 196, 0.13);
   --accent: #dcdcdc;
   --font-cn: "HelveticaNeueCn", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }

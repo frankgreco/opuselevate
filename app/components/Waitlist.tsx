@@ -52,7 +52,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
         style={{
           padding: "20px 22px",
           borderRadius: 16,
-          background: "rgba(255,255,255,.04)",
+          background: "rgba(196,196,196,.04)",
           border: ".5px solid var(--hair)",
         }}
       >

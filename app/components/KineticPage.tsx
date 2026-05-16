@@ -192,8 +192,8 @@ export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
               style={{
                 ...CN,
                 fontWeight: 900,
-                fontSize: "clamp(29px, 8.25vw, 42px)",
-                lineHeight: 0.95,
+                fontSize: "clamp(36px, 11.25vw, 54px)",
+                lineHeight: 0.9,
                 letterSpacing: ".005em",
                 margin: 0,
                 textAlign: "center",

@@ -6,19 +6,21 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 type Logo = {
   src: string;
   alt: string;
-  w: number;
-  intrinsicH: number;
+  // Aspect ratio used to derive the rendered width from the displayed `h`.
+  // Keeps width/height props proportional to displayed size so next/image
+  // generates appropriately-sized srcsets instead of full source dimensions.
+  aspect: number;
   h: number;
   invert?: boolean;
 };
 
 const LOGOS: readonly Logo[] = [
-  { src: "/logos/nasa.png", alt: "NASA", w: 479, intrinsicH: 133, h: 30, invert: true },
-  { src: "/logos/ted.png", alt: "TED", w: 1280, intrinsicH: 470, h: 36, invert: true },
-  { src: "/logos/olympics.svg", alt: "Olympics", w: 1020, intrinsicH: 495, h: 32 },
-  { src: "/logos/ferrari.webp", alt: "Ferrari", w: 800, intrinsicH: 800, h: 48 },
-  { src: "/logos/fide.png", alt: "FIDE", w: 300, intrinsicH: 249, h: 48 },
-  { src: "/logos/harvard.png", alt: "Harvard", w: 202, intrinsicH: 249, h: 52, invert: true },
+  { src: "/logos/nasa.png", alt: "NASA", aspect: 479 / 133, h: 30, invert: true },
+  { src: "/logos/ted.png", alt: "TED", aspect: 1280 / 470, h: 36, invert: true },
+  { src: "/logos/olympics.svg", alt: "Olympics", aspect: 1020 / 495, h: 32 },
+  { src: "/logos/ferrari.webp", alt: "Ferrari", aspect: 1, h: 48 },
+  { src: "/logos/fide.png", alt: "FIDE", aspect: 300 / 249, h: 48 },
+  { src: "/logos/harvard.png", alt: "Harvard", aspect: 202 / 249, h: 52, invert: true },
 ];
 
 const GAP = 56;
@@ -37,23 +39,26 @@ const halfStyle: CSSProperties = {
 function LogoSet({ keyPrefix }: { keyPrefix: string }) {
   return (
     <>
-      {LOGOS.map((logo) => (
-        <Image
-          key={`${keyPrefix}-${logo.src}`}
-          src={logo.src}
-          alt={logo.alt}
-          width={logo.w}
-          height={logo.intrinsicH}
-          style={{
-            height: logo.h,
-            width: "auto",
-            display: "block",
-            objectFit: "contain",
-            opacity: 0.7,
-            filter: logo.invert ? "invert(1)" : undefined,
-          }}
-        />
-      ))}
+      {LOGOS.map((logo) => {
+        const w = Math.round(logo.h * logo.aspect);
+        return (
+          <Image
+            key={`${keyPrefix}-${logo.src}`}
+            src={logo.src}
+            alt={logo.alt}
+            width={w}
+            height={logo.h}
+            style={{
+              height: logo.h,
+              width: "auto",
+              display: "block",
+              objectFit: "contain",
+              opacity: 0.7,
+              filter: logo.invert ? "invert(1)" : undefined,
+            }}
+          />
+        );
+      })}
     </>
   );
 }

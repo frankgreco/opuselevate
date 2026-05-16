@@ -91,3 +91,17 @@ body {
 .km-faq[open] .km-plus {
   transform: rotate(45deg);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .km-marquee {
+    animation: none;
+  }
+  [data-rev] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .km-plus {
+    transition: none;
+  }
+}

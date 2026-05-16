@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties, type ReactNode, useState } from "react";
 import { LogoMarquee } from "./LogoMarquee";
 import { Reveal } from "./Reveal";
 import { Waitlist, type WaitlistState } from "./Waitlist";
@@ -15,7 +15,7 @@ const CARD_GAP = "clamp(10px, 1.5vh, 22px)";
 const HEADING_GAP = "clamp(28px, 4vh, 56px)";
 const CONTENT = "mx-auto w-full max-w-[480px]";
 
-export function KineticPage() {
+export function KineticPage({ backdrop }: { backdrop: ReactNode }) {
   const [waitlist, setWaitlist] = useState<WaitlistState>({
     submitted: false,
     position: null,
@@ -35,47 +35,7 @@ export function KineticPage() {
           overflow: "hidden",
         }}
       >
-        {/* Monaco backdrop spans header + hero. Bottom gradient fades into
-            --background so the next section reads as black. */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            zIndex: 0,
-          }}
-        >
-          <picture>
-            <source
-              media="(min-width: 768px)"
-              srcSet="/monaco-desktop.jpg"
-            />
-            <img
-              src="/monaco-mobile.jpg"
-              alt=""
-              width={720}
-              height={1280}
-              fetchPriority="high"
-              decoding="async"
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
-          </picture>
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(to bottom, rgba(12,12,12,0.35) 0%, rgba(12,12,12,0.55) 55%, var(--background) 100%)",
-            }}
-          />
-        </div>
+        {backdrop}
 
       {/* Header */}
       <header
@@ -203,6 +163,7 @@ export function KineticPage() {
             width={1536}
             height={2752}
             preload
+            sizes="(max-width: 768px) 60vw, 460px"
             style={{
               width: "auto",
               height: "100%",

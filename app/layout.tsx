@@ -9,14 +9,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Beyond Opus · Elevate — For moments that matter.",
-  description:
-    "Caffeine to climb. Nootropics to think. Adaptogens to land — no crash. Coming Q3 2026.",
-  metadataBase: new URL("https://beyondopus.com"),
+  title: "Opus Elevate",
+  description: "",
+  metadataBase: new URL("https://drinkopuselevate.com"),
   openGraph: {
-    title: "Beyond Opus · Elevate",
-    description:
-      "Caffeine to climb. Nootropics to think. Adaptogens to land — no crash. Coming Q3 2026.",
+    title: "Opus Elevate",
+    description: "",
     type: "website",
   },
   robots: { index: true, follow: true },

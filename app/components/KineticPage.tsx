@@ -26,11 +26,63 @@ export function KineticPage() {
 
   return (
     <div style={{ background: "var(--background)", color: "var(--foreground)" }}>
-      <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+      <div
+        style={{
+          minHeight: "100dvh",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Monaco backdrop spans header + hero. Bottom gradient fades into
+            --background so the next section reads as black. */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        >
+          <picture>
+            <source
+              media="(min-width: 768px)"
+              srcSet="/monaco-desktop.jpg"
+            />
+            <img
+              src="/monaco-mobile.jpg"
+              alt=""
+              width={720}
+              height={1280}
+              fetchPriority="high"
+              decoding="async"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          </picture>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(to bottom, rgba(12,12,12,0.35) 0%, rgba(12,12,12,0.55) 55%, var(--background) 100%)",
+            }}
+          />
+        </div>
+
       {/* Header */}
       <header
         style={{
           padding: "18px 20px 14px",
+          position: "relative",
+          zIndex: 2,
         }}
       >
         <div
@@ -46,7 +98,7 @@ export function KineticPage() {
             alt="Beyond Opus"
             width={340}
             height={128}
-            style={{ display: "block", height: 28, width: "auto" }}
+            style={{ display: "block", height: 36, width: "auto" }}
           />
           <span className="sr-only">Beyond Opus</span>
           {waitlist.submitted ? (
@@ -75,13 +127,14 @@ export function KineticPage() {
                 background: "var(--foreground)",
                 color: "var(--background)",
                 border: "none",
-                padding: "8px 14px",
+                padding: "14px",
                 cursor: "pointer",
                 fontSize: 9,
                 lineHeight: 1,
                 letterSpacing: ".24em",
                 textTransform: "uppercase",
                 borderRadius: 0,
+                boxShadow: "0 4px 14px rgba(0, 0, 0, 0.35)",
               }}
             >
               Get Early Access
@@ -94,6 +147,7 @@ export function KineticPage() {
       <section
         style={{
           position: "relative",
+          zIndex: 1,
           flex: 1,
           minHeight: 0,
           padding: `${PAD / 2}px 20px ${PAD}px`,
@@ -111,6 +165,7 @@ export function KineticPage() {
             alignItems: "center",
             justifyContent: "center",
             pointerEvents: "none",
+            zIndex: 1,
           }}
         >
           <div
@@ -120,13 +175,46 @@ export function KineticPage() {
               fontSize: "clamp(84px, 28vw, 220px)",
               lineHeight: 0.85,
               letterSpacing: ".02em",
-              color: "rgba(246,244,239,.05)",
+              color: "rgba(246,244,239,.22)",
               textTransform: "uppercase",
               whiteSpace: "nowrap",
             }}
           >
             ELEVATE
           </div>
+        </div>
+
+        {/* Can: absolutely centered in the section so it shares ELEVATE's vertical center. */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+            zIndex: 2,
+            padding: "clamp(110px, 22vh, 180px) 20px",
+          }}
+        >
+          <Image
+            src="/can-v3.png"
+            alt="Elevate can"
+            width={1536}
+            height={2752}
+            preload
+            style={{
+              width: "auto",
+              height: "100%",
+              maxHeight: "100%",
+              maxWidth: "clamp(240px, 32vw, 460px)",
+              objectFit: "contain",
+              display: "block",
+              userSelect: "none",
+              pointerEvents: "none",
+            }}
+            draggable={false}
+          />
         </div>
 
         <div
@@ -156,36 +244,7 @@ export function KineticPage() {
             <span>For moments that matter.</span>
           </h1>
 
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
-              minHeight: 0,
-              marginTop: 0,
-            }}
-          >
-            <Image
-              src="/can.png"
-              alt="Elevate can"
-              width={768}
-              height={1360}
-              preload
-              style={{
-                width: "auto",
-                height: "100%",
-                maxHeight: "100%",
-                maxWidth: "clamp(240px, 32vw, 460px)",
-                objectFit: "contain",
-                display: "block",
-                userSelect: "none",
-                pointerEvents: "none",
-              }}
-              draggable={false}
-            />
-          </div>
+          <div style={{ flex: 1, minHeight: 0 }} />
 
           <Waitlist
             state={waitlist}

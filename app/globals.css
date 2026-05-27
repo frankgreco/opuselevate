@@ -41,13 +41,36 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html,
 body {
   background: var(--background);
+  /* Fill the safe-area edges with the page background on iOS Safari
+     (combined with viewport-fit=cover in the viewport meta). iOS applies
+     implicit safe-area padding to body — explicitly zeroing it ensures
+     the background reaches the home indicator and notch areas. */
+  margin: 0;
+  padding: 0;
+  min-height: 100dvh;
+}
+body {
   color: var(--foreground);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Always-on full-screen black backdrop. Bulletproof against iOS Safari's
+   viewport quirks — sits behind all content with z-index: -10 and uses
+   100dvh so it tracks toolbar visibility. Body's bg still applies as a
+   fallback for non-iOS clients. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--background);
+  z-index: -10;
+  pointer-events: none;
 }
 
 ::selection {

@@ -89,6 +89,16 @@ export function Elevate() {
       if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
         (window as unknown as { gsap: unknown }).gsap = gsap;
       }
+      // Disable browser scroll restoration. Without this, a Cmd+R / F5
+      // refresh would restore the previous scrollY and the ScrollTrigger
+      // timeline would be mid-progress on first paint, causing a layout
+      // shift vs. a fresh navigation. Force scrollY 0 on every load.
+      if (typeof window !== "undefined") {
+        if ("scrollRestoration" in window.history) {
+          window.history.scrollRestoration = "manual";
+        }
+        window.scrollTo(0, 0);
+      }
       // 1) Set initial state: hero rest pose immediately. Topdown can
       // peeking from the bottom edge, logo centered, everything else hidden.
       gsap.set(

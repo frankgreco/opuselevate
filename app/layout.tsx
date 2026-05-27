@@ -24,6 +24,9 @@ export const viewport: Viewport = {
   themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
+  // Extend the page background through the iOS safe area (e.g., below
+  // the home indicator) instead of letting Safari letterbox it.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

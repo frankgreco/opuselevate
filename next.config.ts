@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
   compress: true,
+  // Allow any dev-server origin (LAN testing on phones, etc.). Only affects
+  // `next dev`; production builds ignore this.
+  allowedDevOrigins: ["*"],
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: ONE_YEAR,

@@ -71,7 +71,8 @@ export function Elevate() {
   const topdownRef = useRef<HTMLImageElement>(null);
   // Intermediate camera-tilt frames used only during the rise crossfade,
   // to morph the chrome lid smoothly between topdown (35°) and front (0°).
-  // 7 frames total at ~5-7° steps for smooth perspective shift.
+  // 8 frames total at ~3-7° steps for smooth perspective shift.
+  const tilt31Ref = useRef<HTMLImageElement>(null);
   const tilt28Ref = useRef<HTMLImageElement>(null);
   const tilt22Ref = useRef<HTMLImageElement>(null);
   const tilt16Ref = useRef<HTMLImageElement>(null);
@@ -104,6 +105,7 @@ export function Elevate() {
       gsap.set(
         [
           frontRef.current,
+          tilt31Ref.current,
           tilt28Ref.current,
           tilt22Ref.current,
           tilt16Ref.current,
@@ -179,11 +181,12 @@ export function Elevate() {
           },
           0.08,
         );
-        // 7-frame angle morph across the rise window. Each transition
-        // is ~5-7° of camera tilt — small enough that the crossfade
+        // 8-frame angle morph across the rise window. Each transition
+        // is ~3-7° of camera tilt — small enough that the crossfade
         // reads as a smooth perspective shift rather than two ghost cans.
         const riseFrames = [
           topdownRef, // 35°
+          tilt31Ref,  // 31°
           tilt28Ref,  // 28°
           tilt22Ref,  // 22°
           tilt16Ref,  // 16°
@@ -385,9 +388,10 @@ export function Elevate() {
             willChange: "bottom, height, opacity",
           }}
         >
-          {/* Topdown is the hero rest pose. Front + 5 tilt frames drive
+          {/* Topdown is the hero rest pose. Front + 6 tilt frames drive
               the scroll-driven rise crossfade (smooth 35° → 0° morph). */}
           <CanFrame src="/can/angle-topdown.png" innerRef={topdownRef} />
+          <CanFrame src="/can/angle-tilt31.png" innerRef={tilt31Ref} />
           <CanFrame src="/can/angle-tilt28.png" innerRef={tilt28Ref} />
           <CanFrame src="/can/angle-tilt22.png" innerRef={tilt22Ref} />
           <CanFrame src="/can/angle-tilt16.png" innerRef={tilt16Ref} />

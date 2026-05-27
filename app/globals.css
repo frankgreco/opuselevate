@@ -117,14 +117,9 @@ body::before {
 
 /* Elevate page animations are driven by GSAP. */
 
-/* Mobile: lift the hero logo above center so it doesn't crowd the
-   top of the can (the can stays at its desktop size — top edge ~55vh —
-   so the logo needs to clear that). */
+/* Hero logo sits in the upper third on every viewport so it clears
+   the chrome top of the can (visible from ~55vh down). At top: 50%
+   the logo would overlap the can on tall/wide desktop viewports. */
 .el-hero-logo {
-  top: 50%;
-}
-@media (max-width: 640px) {
-  .el-hero-logo {
-    top: 30%;
-  }
+  top: 30%;
 }

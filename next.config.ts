@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/logos/:path*",
+        source: "/can/:path*",
         headers: [
           {
             key: "Cache-Control",

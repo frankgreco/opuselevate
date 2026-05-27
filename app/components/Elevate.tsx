@@ -81,7 +81,6 @@ export function Elevate() {
   const beatRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
   const bloomRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
   const waitlistRef = useRef<HTMLDivElement>(null);
-  const scrollCueRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
@@ -130,7 +129,6 @@ export function Elevate() {
       });
       gsap.set(bloomRefs.current, { autoAlpha: 0 });
       gsap.set(waitlistRef.current, { autoAlpha: 0, y: 40 });
-      gsap.set(scrollCueRef.current, { autoAlpha: 0 });
 
       // 2) Build the scroll timeline (deferred — attached after intro completes).
       const buildScrollTl = () => {
@@ -146,21 +144,15 @@ export function Elevate() {
           },
         });
 
-        // [0.02 → 0.10] Logo + scroll cue fade out. fromTo with explicit
-        // FROM state + immediateRender:false so (a) the entry fade-in
-        // isn't snapped over at scroll TL creation, and (b) scrolling
-        // back to progress 0 restores the logo + cue (instead of leaving
-        // them at the tween's FROM state captured mid-entry).
+        // [0.02 → 0.10] Logo fades out. fromTo with explicit FROM state +
+        // immediateRender:false so (a) the entry fade-in isn't snapped
+        // over at scroll TL creation, and (b) scrolling back to progress
+        // 0 restores the logo (instead of leaving it at the tween's FROM
+        // state captured mid-entry).
         tl.fromTo(
           logoRef.current,
           { autoAlpha: 1, y: 0 },
           { autoAlpha: 0, duration: 0.08, immediateRender: false },
-          0.02,
-        );
-        tl.fromTo(
-          scrollCueRef.current,
-          { autoAlpha: 0.5 },
-          { autoAlpha: 0, duration: 0.05, immediateRender: false },
           0.02,
         );
 
@@ -283,19 +275,14 @@ export function Elevate() {
       // won't blow past the pinned region while the entry fade is running.
       buildScrollTl();
 
-      // 4) Mount entrance: a short fade-in for the topdown can + logo +
-      // scroll cue. No spin, no descent — the page starts at hero rest.
+      // 4) Mount entrance: a short fade-in for the topdown can + logo.
+      // No spin, no descent — the page starts at hero rest.
       const entry = gsap.timeline();
       entry.to(topdownRef.current, { autoAlpha: 1, duration: 0.7, ease: "power2.out" }, 0);
       entry.to(
         logoRef.current,
         { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
         0.15,
-      );
-      entry.to(
-        scrollCueRef.current,
-        { autoAlpha: 0.5, duration: 0.6, ease: "power2.out" },
-        0.8,
       );
     },
     { scope: root },
@@ -549,26 +536,6 @@ export function Elevate() {
               inputId="waitlist-email"
             />
           </div>
-        </div>
-
-        {/* Scroll cue */}
-        <div
-          ref={scrollCueRef}
-          style={{
-            position: "absolute",
-            bottom: 24,
-            left: "50%",
-            transform: "translateX(-50%)",
-            ...MONO,
-            fontSize: 9,
-            letterSpacing: ".44em",
-            color: "#fff",
-            opacity: 0,
-            pointerEvents: "none",
-            zIndex: 3,
-          }}
-        >
-          SCROLL
         </div>
       </div>
     </main>

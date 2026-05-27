@@ -60,14 +60,19 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Always-on full-screen black backdrop. Bulletproof against iOS Safari's
-   viewport quirks — sits behind all content with z-index: -10 and uses
-   100dvh so it tracks toolbar visibility. Body's bg still applies as a
-   fallback for non-iOS clients. */
+/* Always-on full-screen black backdrop. Anchored to negative
+   safe-area-inset offsets so it physically extends BEYOND the layout
+   viewport into every iOS Safari safe area (notch, home indicator,
+   collapsible toolbar). Stable across toolbar minimize/expand cycles
+   and the dynamic viewport transitions that break `100vh`/`100lvh`.
+   Body's bg still applies as a fallback for non-iOS clients. */
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  top: calc(-1 * env(safe-area-inset-top, 0px));
+  right: calc(-1 * env(safe-area-inset-right, 0px));
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  left: calc(-1 * env(safe-area-inset-left, 0px));
   background: var(--background);
   z-index: -10;
   pointer-events: none;

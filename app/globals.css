@@ -23,11 +23,11 @@
 }
 
 :root {
-  --background: #0c0c0c;
-  --foreground: #c4c4c4;
-  --dim: rgba(196, 196, 196, 0.55);
-  --hair: rgba(196, 196, 196, 0.13);
-  --accent: #dcdcdc;
+  --background: #000000;
+  --foreground: #ffffff;
+  --dim: rgba(255, 255, 255, 0.5);
+  --hair: rgba(255, 255, 255, 0.14);
+  --accent: #ffffff;
   --font-cn: "HelveticaNeueCn", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -91,3 +91,5 @@ body {
     transition: none;
   }
 }
+
+/* Elevate page animations are driven by GSAP. */

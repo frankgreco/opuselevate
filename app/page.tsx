@@ -1,6 +1,5 @@
-import { KineticPage } from "./components/KineticPage";
-import { MonacoBackdrop } from "./components/MonacoBackdrop";
+import { Elevate } from "./components/Elevate";
 
 export default function Home() {
-  return <KineticPage backdrop={<MonacoBackdrop />} />;
+  return <Elevate />;
 }

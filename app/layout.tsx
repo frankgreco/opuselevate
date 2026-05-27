@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0c0c0c",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
 };
@@ -48,6 +48,10 @@ export default function RootLayout({
           type="font/otf"
           crossOrigin="anonymous"
         />
+        <link rel="preload" href="/can/angle-topdown.png" as="image" />
+        <link rel="preload" href="/can/angle-front.png" as="image" />
+        <link rel="preload" href="/can/angle-tilt22.png" as="image" />
+        <link rel="preload" href="/can/angle-tilt10.png" as="image" />
       </head>
       <body>{children}</body>
     </html>

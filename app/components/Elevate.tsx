@@ -70,9 +70,13 @@ export function Elevate() {
   const frontRef = useRef<HTMLImageElement>(null);
   const topdownRef = useRef<HTMLImageElement>(null);
   // Intermediate camera-tilt frames used only during the rise crossfade,
-  // to morph the chrome lid smoothly between topdown and front.
+  // to morph the chrome lid smoothly between topdown (35°) and front (0°).
+  // 7 frames total at ~5-7° steps for smooth perspective shift.
+  const tilt28Ref = useRef<HTMLImageElement>(null);
   const tilt22Ref = useRef<HTMLImageElement>(null);
+  const tilt16Ref = useRef<HTMLImageElement>(null);
   const tilt10Ref = useRef<HTMLImageElement>(null);
+  const tilt5Ref = useRef<HTMLImageElement>(null);
   const beatRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
   const bloomRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
   const waitlistRef = useRef<HTMLDivElement>(null);
@@ -87,9 +91,17 @@ export function Elevate() {
       }
       // 1) Set initial state: hero rest pose immediately. Topdown can
       // peeking from the bottom edge, logo centered, everything else hidden.
-      gsap.set([frontRef.current, tilt22Ref.current, tilt10Ref.current], {
-        autoAlpha: 0,
-      });
+      gsap.set(
+        [
+          frontRef.current,
+          tilt28Ref.current,
+          tilt22Ref.current,
+          tilt16Ref.current,
+          tilt10Ref.current,
+          tilt5Ref.current,
+        ],
+        { autoAlpha: 0 },
+      );
       gsap.set(topdownRef.current, { autoAlpha: 0 });
       gsap.set(logoRef.current, { autoAlpha: 0, y: 12 });
       gsap.set(canStageRef.current, {
@@ -157,40 +169,36 @@ export function Elevate() {
           },
           0.08,
         );
-        const xfade = 0.04;
-        // topdown → tilt22 at 0.14
-        tl.to(
-          topdownRef.current,
-          { autoAlpha: 0, duration: xfade, immediateRender: false },
-          0.14,
-        );
-        tl.to(
-          tilt22Ref.current,
-          { autoAlpha: 1, duration: xfade, immediateRender: false },
-          0.14,
-        );
-        // tilt22 → tilt10 at 0.18
-        tl.to(
-          tilt22Ref.current,
-          { autoAlpha: 0, duration: xfade, immediateRender: false },
-          0.18,
-        );
-        tl.to(
-          tilt10Ref.current,
-          { autoAlpha: 1, duration: xfade, immediateRender: false },
-          0.18,
-        );
-        // tilt10 → front at 0.22
-        tl.to(
-          tilt10Ref.current,
-          { autoAlpha: 0, duration: xfade, immediateRender: false },
-          0.22,
-        );
-        tl.to(
-          frontRef.current,
-          { autoAlpha: 1, duration: xfade, immediateRender: false },
-          0.22,
-        );
+        // 7-frame angle morph across the rise window. Each transition
+        // is ~5-7° of camera tilt — small enough that the crossfade
+        // reads as a smooth perspective shift rather than two ghost cans.
+        const riseFrames = [
+          topdownRef, // 35°
+          tilt28Ref,  // 28°
+          tilt22Ref,  // 22°
+          tilt16Ref,  // 16°
+          tilt10Ref,  // 10°
+          tilt5Ref,   // 5°
+          frontRef,   // 0°
+        ];
+        const xfadeStart = 0.12;
+        const xfadeEnd = 0.30;
+        const slot = (xfadeEnd - xfadeStart) / (riseFrames.length - 1);
+        for (let i = 0; i < riseFrames.length - 1; i++) {
+          const out = riseFrames[i].current;
+          const next = riseFrames[i + 1].current;
+          const t = xfadeStart + i * slot;
+          tl.to(
+            out,
+            { autoAlpha: 0, duration: slot, immediateRender: false },
+            t,
+          );
+          tl.to(
+            next,
+            { autoAlpha: 1, duration: slot, immediateRender: false },
+            t,
+          );
+        }
 
         // [0.34 → 0.94] Three beats, edge-to-edge (no overlap). Each beat's
         // OUT completes exactly when the next beat's IN starts, so the
@@ -322,10 +330,11 @@ export function Elevate() {
         {/* Logo */}
         <div
           ref={logoRef}
+          className="el-hero-logo"
           style={{
             position: "absolute",
             left: "50%",
-            top: "50%",
+            // top is set by .el-hero-logo (50% default; 30% on mobile via media query)
             transform: "translate(-50%, -50%)",
             opacity: 0,
             zIndex: 3,
@@ -366,11 +375,14 @@ export function Elevate() {
             willChange: "bottom, height, opacity",
           }}
         >
-          {/* Topdown is the hero rest pose. Front + tilts drive the
-              scroll-driven rise crossfade. */}
+          {/* Topdown is the hero rest pose. Front + 5 tilt frames drive
+              the scroll-driven rise crossfade (smooth 35° → 0° morph). */}
           <CanFrame src="/can/angle-topdown.png" innerRef={topdownRef} />
+          <CanFrame src="/can/angle-tilt28.png" innerRef={tilt28Ref} />
           <CanFrame src="/can/angle-tilt22.png" innerRef={tilt22Ref} />
+          <CanFrame src="/can/angle-tilt16.png" innerRef={tilt16Ref} />
           <CanFrame src="/can/angle-tilt10.png" innerRef={tilt10Ref} />
+          <CanFrame src="/can/angle-tilt5.png" innerRef={tilt5Ref} />
           <CanFrame src="/can/angle-front.png" innerRef={frontRef} />
         </div>
 

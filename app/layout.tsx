@@ -49,9 +49,12 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link rel="preload" href="/can/angle-topdown.png" as="image" />
-        <link rel="preload" href="/can/angle-front.png" as="image" />
+        <link rel="preload" href="/can/angle-tilt28.png" as="image" />
         <link rel="preload" href="/can/angle-tilt22.png" as="image" />
+        <link rel="preload" href="/can/angle-tilt16.png" as="image" />
         <link rel="preload" href="/can/angle-tilt10.png" as="image" />
+        <link rel="preload" href="/can/angle-tilt5.png" as="image" />
+        <link rel="preload" href="/can/angle-front.png" as="image" />
       </head>
       <body>{children}</body>
     </html>

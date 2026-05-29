@@ -3,9 +3,11 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
-import { useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Waitlist, type WaitlistState } from "./Waitlist";
 import { CAN_FRAMES } from "../can-frames";
+import { GlassMeshPanel } from "../logo/GlassMeshPanel";
+import { buildElevateDataUrl } from "../logo/buildSdf";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -60,11 +62,41 @@ const PIN_BOTTOM = "32vh";
 const PIN_HEIGHT = "68vh";
 
 
+// TEMPORARY (stakeholder review): the 3D-glass wordmark from /logo, sized to sit
+// in the hero in place of the flat SVG. Measures its own box and feeds the px
+// height to GlassMeshPanel (which sizes the extruded mesh to height*0.8). The box
+// is sized so the mesh width roughly matches the flat logo's footprint. Remove
+// this — and the toggle in Elevate — once a direction is chosen.
+function HeroGlassLogo() {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
+  const [elevateUrl, setElevateUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setHeight(el.clientHeight));
+    ro.observe(el);
+    buildElevateDataUrl()
+      .then(setElevateUrl)
+      .catch((e) => console.warn("[hero glass logo] failed:", e));
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={boxRef} style={{ width: "min(560px, 92vw)", height: "min(220px, 34vw)" }}>
+      {height > 0 && <GlassMeshPanel elevateUrl={elevateUrl} height={height} />}
+    </div>
+  );
+}
+
 export function Elevate() {
   const [waitlist, setWaitlist] = useState<WaitlistState>({
     submitted: false,
     position: null,
   });
+  // TEMPORARY: stakeholder toggle between the flat SVG logo and the 3D-glass one.
+  const [glassLogo, setGlassLogo] = useState(false);
 
   const root = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -325,6 +357,33 @@ export function Elevate() {
         overflow: "hidden",
       }}
     >
+      {/* TEMPORARY stakeholder control: flip the hero wordmark between the flat
+          SVG and the 3D-glass mark. Remove along with HeroGlassLogo / glassLogo. */}
+      <button
+        type="button"
+        onClick={() => setGlassLogo((g) => !g)}
+        style={{
+          ...MONO,
+          position: "fixed",
+          top: 16,
+          right: 16,
+          zIndex: 50,
+          fontSize: 11,
+          letterSpacing: ".12em",
+          textTransform: "uppercase",
+          color: "#fff",
+          background: "rgba(255,255,255,0.08)",
+          border: "1px solid rgba(255,255,255,0.22)",
+          borderRadius: 999,
+          padding: "8px 14px",
+          cursor: "pointer",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
+      >
+        Logo: {glassLogo ? "Glass" : "Flat"}
+      </button>
+
       <div
         ref={stageRef}
         style={{
@@ -372,21 +431,25 @@ export function Elevate() {
             willChange: "opacity, transform",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.svg"
-            alt="Opus Elevate"
-            style={{
-              display: "block",
-              // Bigger on mobile (78vw min 260px), same on desktop (caps at 420px).
-              width: "min(420px, max(78vw, 260px))",
-              height: "auto",
-              filter: "brightness(0) invert(1)",
-              userSelect: "none",
-              pointerEvents: "none",
-            }}
-            draggable={false}
-          />
+          {glassLogo ? (
+            <HeroGlassLogo />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/logo.svg"
+              alt="Opus Elevate"
+              style={{
+                display: "block",
+                // Bigger on mobile (78vw min 260px), same on desktop (caps at 420px).
+                width: "min(420px, max(78vw, 260px))",
+                height: "auto",
+                filter: "brightness(0) invert(1)",
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+              draggable={false}
+            />
+          )}
         </div>
 
         {/* Can stage */}

@@ -52,15 +52,12 @@ export default function RootLayout({
           type="font/otf"
           crossOrigin="anonymous"
         />
-        {CAN_FRAMES.map((src) => (
-          <link
-            key={src}
-            rel="preload"
-            href={src}
-            as="image"
-            type="image/avif"
-          />
-        ))}
+        {/* Only the rest-pose frame is preloaded for a fast first paint; the
+            remaining rotation frames are loaded as off-DOM Image objects by
+            Elevate and painted to a canvas on scroll. Preloading all 100 here
+            forced the browser to fetch + decode every frame up front, spiking
+            memory on load (and crashing iOS Safari). */}
+        <link rel="preload" href={CAN_FRAMES[0]} as="image" type="image/avif" />
       </head>
       <body>{children}</body>
     </html>

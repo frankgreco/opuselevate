@@ -71,10 +71,13 @@ export function Elevate() {
   const logoRef = useRef<HTMLDivElement>(null);
   const canStageRef = useRef<HTMLDivElement>(null);
   // The can rotation is CAN_FRAMES.length frames sliced from the source clip,
-  // ordered top-down rest pose (index 0) → straight-on front (last). frameRefs[0]
-  // is the hero rest pose; the rest drive the scroll-driven rise crossfade,
-  // morphing the camera angle smoothly across many small steps.
-  const frameRefs = useRef<Array<HTMLImageElement | null>>([]);
+  // ordered top-down rest pose (index 0) → straight-on front (last). They are
+  // loaded as off-DOM Image objects and painted, one at a time, to a single
+  // <canvas> as scroll progresses. (Mounting all frames as stacked <img>
+  // layers — one GPU compositor layer each — blew past iOS Safari's per-tab
+  // memory ceiling and crashed the page on load.)
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imagesRef = useRef<HTMLImageElement[]>([]);
   const beatRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
   const bloomRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
   const waitlistRef = useRef<HTMLDivElement>(null);
@@ -96,10 +99,63 @@ export function Elevate() {
         }
         window.scrollTo(0, 0);
       }
+
+      // 0) Load the rotation frames as off-DOM Image objects. Only the frame
+      // currently being shown is ever painted to the canvas, so decoded-image
+      // memory is bounded by the browser's own cache rather than 100 live
+      // compositor layers. Compressed source bytes (~6 MB total) are trivial.
+      const images = CAN_FRAMES.map((src) => {
+        const img = new Image();
+        img.decoding = "async";
+        img.src = src;
+        return img;
+      });
+      imagesRef.current = images;
+
+      const isReady = (im?: HTMLImageElement) =>
+        !!im && im.complete && im.naturalWidth > 0;
+
+      let bufferSized = false;
+      let lastDrawn = -1;
+      const drawFrame = (idx: number) => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext("2d");
+        if (!canvas || !ctx) return;
+        const n = images.length;
+        let i = Math.min(n - 1, Math.max(0, Math.round(idx)));
+        let img = images[i];
+        // Fast scroll can outrun decode; fall back to the nearest decoded
+        // frame so the canvas never flashes blank.
+        if (!isReady(img)) {
+          for (let d = 1; d < n; d++) {
+            if (isReady(images[i - d])) { img = images[i - d]; i -= d; break; }
+            if (isReady(images[i + d])) { img = images[i + d]; i += d; break; }
+          }
+        }
+        if (!isReady(img)) return;
+        if (!bufferSized) {
+          // Backing store = source resolution; the element is scaled to the
+          // stage box via CSS object-fit (matching the old <img> contain).
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          bufferSized = true;
+        }
+        if (i === lastDrawn) return;
+        // Frames carry alpha (transparent background), so clear before each
+        // paint to avoid the previous frame ghosting through.
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        lastDrawn = i;
+      };
+
+      // Paint the rest-pose frame as soon as it decodes (entry fades it in).
+      if (isReady(images[0])) drawFrame(0);
+      else images[0].addEventListener("load", () => drawFrame(0), { once: true });
+
       // 1) Set initial state: hero rest pose immediately. The rest-pose frame
       // (index 0) peeks from the bottom edge, logo centered, everything else
-      // hidden. All frames start hidden; the entry timeline fades in frame 0.
-      gsap.set(frameRefs.current, { autoAlpha: 0 });
+      // hidden. The canvas starts hidden; the entry timeline fades it in.
+      gsap.set(canvasRef.current, { autoAlpha: 0 });
       gsap.set(logoRef.current, { autoAlpha: 0, y: 12 });
       gsap.set(canStageRef.current, {
         bottom: HERO_BOTTOM,
@@ -159,29 +215,22 @@ export function Elevate() {
           },
           0.08,
         );
-        // Angle morph across the rise window: crossfade every adjacent frame
-        // pair (topdown → … → front). With many frames each step is a tiny
-        // camera-tilt delta, so the crossfade reads as a smooth perspective
-        // shift rather than two ghost cans.
-        const riseFrames = frameRefs.current;
-        const xfadeStart = 0.12;
-        const xfadeEnd = 0.30;
-        const slot = (xfadeEnd - xfadeStart) / (riseFrames.length - 1);
-        for (let i = 0; i < riseFrames.length - 1; i++) {
-          const out = riseFrames[i];
-          const next = riseFrames[i + 1];
-          const t = xfadeStart + i * slot;
-          tl.to(
-            out,
-            { autoAlpha: 0, duration: slot, immediateRender: false },
-            t,
-          );
-          tl.to(
-            next,
-            { autoAlpha: 1, duration: slot, immediateRender: false },
-            t,
-          );
-        }
+        // Angle morph across the rise window: drive a single frame index from
+        // first → last and paint it to the canvas. With ~100 frames each step
+        // is a tiny camera-tilt delta, so the scrubbed swap reads as a smooth
+        // perspective shift (video-like) rather than discrete jumps.
+        const frameState = { i: 0 };
+        tl.to(
+          frameState,
+          {
+            i: images.length - 1,
+            duration: 0.18, // xfade window 0.12 → 0.30
+            ease: "none",
+            immediateRender: false,
+            onUpdate: () => drawFrame(frameState.i),
+          },
+          0.12,
+        );
 
         // [0.34 → 0.94] Three beats, edge-to-edge (no overlap). Each beat's
         // OUT completes exactly when the next beat's IN starts, so the
@@ -256,7 +305,7 @@ export function Elevate() {
       // 4) Mount entrance: a short fade-in for the topdown can + logo.
       // No spin, no descent — the page starts at hero rest.
       const entry = gsap.timeline();
-      entry.to(frameRefs.current[0], { autoAlpha: 1, duration: 0.7, ease: "power2.out" }, 0);
+      entry.to(canvasRef.current, { autoAlpha: 1, duration: 0.7, ease: "power2.out" }, 0);
       entry.to(
         logoRef.current,
         { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
@@ -356,17 +405,23 @@ export function Elevate() {
             willChange: "bottom, height, opacity",
           }}
         >
-          {/* Frame 0 is the hero rest pose; the remaining frames drive the
-              scroll-driven rise crossfade (smooth top-down → front morph). */}
-          {CAN_FRAMES.map((src, i) => (
-            <CanFrame
-              key={src}
-              src={src}
-              innerRef={(el) => {
-                frameRefs.current[i] = el;
-              }}
-            />
-          ))}
+          {/* Single canvas: the rest-pose frame is painted on mount, then the
+              scroll timeline swaps frames on it (smooth top-down → front morph).
+              object-fit:contain scales the source-resolution backing store into
+              the stage box, exactly as the old <img> frames did. */}
+          <canvas
+            ref={canvasRef}
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              opacity: 0,
+              pointerEvents: "none",
+            }}
+          />
         </div>
 
         {/* Beats */}
@@ -521,38 +576,5 @@ export function Elevate() {
         </div>
       </div>
     </main>
-  );
-}
-
-function CanFrame({
-  src,
-  innerRef,
-  flipX,
-}: {
-  src: string;
-  innerRef: React.Ref<HTMLImageElement>;
-  flipX?: boolean;
-}) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      ref={innerRef}
-      src={src}
-      alt=""
-      aria-hidden
-      style={{
-        position: "absolute",
-        inset: 0,
-        width: "100%",
-        height: "100%",
-        objectFit: "contain",
-        userSelect: "none",
-        pointerEvents: "none",
-        transform: flipX ? "scaleX(-1)" : undefined,
-        opacity: 0,
-        willChange: "opacity",
-      }}
-      draggable={false}
-    />
   );
 }

@@ -38,6 +38,23 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistMono.variable}`}>
       <head>
+        {/* Disable the browser's scroll restoration before hydration. On a
+            reload the browser restores the previous scrollY around hydration
+            time; if it lands mid-pin, ScrollTrigger initializes at that
+            progress and applies the scroll timeline (front-pose can + a beat)
+            while the entry timeline is still fading the logo in — a flash of
+            three mutually-exclusive states at once. A raw inline <script> here
+            runs synchronously during head parse — before the browser restores
+            scroll — and wins the race. (next/script beforeInteractive only
+            serializes the snippet into the RSC payload, too late to help.) The
+            in-effect reset in Elevate then only handles same-document nav. */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html:
+              "if('scrollRestoration' in history){history.scrollRestoration='manual';}window.scrollTo(0,0);",
+          }}
+        />
         <link
           rel="preload"
           href="/fonts/HelveticaNeueLTPro-HvCn.otf"

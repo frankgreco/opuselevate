@@ -104,18 +104,19 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           aria-label="Email address"
-          className="px-2.5 sm:px-4"
+          className="px-3.5 sm:px-4"
           style={{
             width: "100%",
-            background: "transparent",
-            border: ".5px solid var(--hair)",
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 12,
             outline: "none",
             minWidth: 0,
-            height: 44,
+            height: 50,
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: 11,
             lineHeight: 1,
-            letterSpacing: ".01em",
+            letterSpacing: ".04em",
             color: "var(--foreground)",
           }}
         />
@@ -128,16 +129,17 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
             width: "100%",
             alignItems: "center",
             justifyContent: "center",
-            background: "var(--foreground)",
-            color: "var(--background)",
-            border: "none",
-            height: 44,
+            background: "rgba(255,255,255,0.12)",
+            color: "var(--foreground)",
+            border: "1px solid rgba(255,255,255,0.3)",
+            height: 50,
             cursor: pending ? "default" : "pointer",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: 11,
+            fontWeight: 600,
             lineHeight: 1,
             textTransform: "uppercase",
-            borderRadius: 0,
+            borderRadius: 12,
             opacity: pending ? 0.6 : 1,
           }}
         >

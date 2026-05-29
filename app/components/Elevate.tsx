@@ -543,28 +543,7 @@ export function Elevate() {
             zIndex: 3,
           }}
         >
-          <h2
-            style={{
-              ...CN,
-              fontWeight: 900,
-              fontSize: "clamp(36px, 7vw, 84px)",
-              lineHeight: 0.85,
-              letterSpacing: "-0.02em",
-              margin: 0,
-              textTransform: "uppercase",
-              color: "#fff",
-            }}
-          >
-            Be First.
-          </h2>
-          <div
-            style={{
-              marginTop: "clamp(14px, 2.2vh, 22px)",
-              display: "inline-block",
-              width: "min(380px, 80vw)",
-              textAlign: "left",
-            }}
-          >
+          <div style={{ display: "inline-block" }}>
             <Waitlist
               state={waitlist}
               onSubmitted={(position) =>

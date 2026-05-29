@@ -93,6 +93,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
         className="gap-1.5 sm:gap-2"
         style={{
           display: "flex",
+          flexDirection: "column",
         }}
       >
         <input
@@ -105,7 +106,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           aria-label="Email address"
           className="px-2.5 sm:px-4"
           style={{
-            flex: 1,
+            width: "100%",
             background: "transparent",
             border: ".5px solid var(--hair)",
             outline: "none",
@@ -124,6 +125,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           className="px-2.5 sm:px-[18px] tracking-[.14em] sm:tracking-[.24em]"
           style={{
             display: "inline-flex",
+            width: "100%",
             alignItems: "center",
             justifyContent: "center",
             background: "var(--foreground)",
@@ -139,7 +141,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
             opacity: pending ? 0.6 : 1,
           }}
         >
-          {pending ? "Submitting…" : "Early Access"}
+          {pending ? "Submitting…" : "Get Early Access"}
         </button>
       </form>
       {error && (

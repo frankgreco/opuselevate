@@ -51,6 +51,15 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100dvh;
+  /* Hide the scrollbar but keep scrolling — scroll still drives the
+     ScrollTrigger hero timeline. Firefox + legacy Edge below; WebKit via
+     the ::-webkit-scrollbar rule. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
 }
 body {
   color: var(--foreground);

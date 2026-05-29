@@ -5,6 +5,7 @@ import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import { useRef, useState, type CSSProperties } from "react";
 import { Waitlist, type WaitlistState } from "./Waitlist";
+import { CAN_FRAMES } from "../can-frames";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
@@ -48,7 +49,10 @@ const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 // Plain vh — GSAP can't tween CSS min()/calc(). On narrow screens
 // can may exceed viewport width; main has overflow:hidden so it clips.
 // Hero rest (topdown): top 41% of can peeking at viewport bottom.
-const HERO_BOTTOM = "-65vh";
+// Rest pose: the can peeks from the bottom showing the lid + shoulder, but
+// sits low enough that the "opus" wordmark on the body stays below the fold
+// at rest — it's only revealed as the can rises on scroll.
+const HERO_BOTTOM = "-54vh";
 const HERO_HEIGHT = "110vh";
 // Top-anchored (front view): large front can dominating the upper portion
 // of the viewport, leaving room for beat content below.
@@ -66,18 +70,11 @@ export function Elevate() {
   const stageRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const canStageRef = useRef<HTMLDivElement>(null);
-  // Front PNG drives rise endpoint + beats.
-  const frontRef = useRef<HTMLImageElement>(null);
-  const topdownRef = useRef<HTMLImageElement>(null);
-  // Intermediate camera-tilt frames used only during the rise crossfade,
-  // to morph the chrome lid smoothly between topdown (35°) and front (0°).
-  // 8 frames total at ~3-7° steps for smooth perspective shift.
-  const tilt31Ref = useRef<HTMLImageElement>(null);
-  const tilt28Ref = useRef<HTMLImageElement>(null);
-  const tilt22Ref = useRef<HTMLImageElement>(null);
-  const tilt16Ref = useRef<HTMLImageElement>(null);
-  const tilt10Ref = useRef<HTMLImageElement>(null);
-  const tilt5Ref = useRef<HTMLImageElement>(null);
+  // The can rotation is CAN_FRAMES.length frames sliced from the source clip,
+  // ordered top-down rest pose (index 0) → straight-on front (last). frameRefs[0]
+  // is the hero rest pose; the rest drive the scroll-driven rise crossfade,
+  // morphing the camera angle smoothly across many small steps.
+  const frameRefs = useRef<Array<HTMLImageElement | null>>([]);
   const beatRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
   const bloomRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
   const waitlistRef = useRef<HTMLDivElement>(null);
@@ -99,21 +96,10 @@ export function Elevate() {
         }
         window.scrollTo(0, 0);
       }
-      // 1) Set initial state: hero rest pose immediately. Topdown can
-      // peeking from the bottom edge, logo centered, everything else hidden.
-      gsap.set(
-        [
-          frontRef.current,
-          tilt31Ref.current,
-          tilt28Ref.current,
-          tilt22Ref.current,
-          tilt16Ref.current,
-          tilt10Ref.current,
-          tilt5Ref.current,
-        ],
-        { autoAlpha: 0 },
-      );
-      gsap.set(topdownRef.current, { autoAlpha: 0 });
+      // 1) Set initial state: hero rest pose immediately. The rest-pose frame
+      // (index 0) peeks from the bottom edge, logo centered, everything else
+      // hidden. All frames start hidden; the entry timeline fades in frame 0.
+      gsap.set(frameRefs.current, { autoAlpha: 0 });
       gsap.set(logoRef.current, { autoAlpha: 0, y: 12 });
       gsap.set(canStageRef.current, {
         bottom: HERO_BOTTOM,
@@ -173,25 +159,17 @@ export function Elevate() {
           },
           0.08,
         );
-        // 8-frame angle morph across the rise window. Each transition
-        // is ~3-7° of camera tilt — small enough that the crossfade
-        // reads as a smooth perspective shift rather than two ghost cans.
-        const riseFrames = [
-          topdownRef, // 35°
-          tilt31Ref,  // 31°
-          tilt28Ref,  // 28°
-          tilt22Ref,  // 22°
-          tilt16Ref,  // 16°
-          tilt10Ref,  // 10°
-          tilt5Ref,   // 5°
-          frontRef,   // 0°
-        ];
+        // Angle morph across the rise window: crossfade every adjacent frame
+        // pair (topdown → … → front). With many frames each step is a tiny
+        // camera-tilt delta, so the crossfade reads as a smooth perspective
+        // shift rather than two ghost cans.
+        const riseFrames = frameRefs.current;
         const xfadeStart = 0.12;
         const xfadeEnd = 0.30;
         const slot = (xfadeEnd - xfadeStart) / (riseFrames.length - 1);
         for (let i = 0; i < riseFrames.length - 1; i++) {
-          const out = riseFrames[i].current;
-          const next = riseFrames[i + 1].current;
+          const out = riseFrames[i];
+          const next = riseFrames[i + 1];
           const t = xfadeStart + i * slot;
           tl.to(
             out,
@@ -278,7 +256,7 @@ export function Elevate() {
       // 4) Mount entrance: a short fade-in for the topdown can + logo.
       // No spin, no descent — the page starts at hero rest.
       const entry = gsap.timeline();
-      entry.to(topdownRef.current, { autoAlpha: 1, duration: 0.7, ease: "power2.out" }, 0);
+      entry.to(frameRefs.current[0], { autoAlpha: 1, duration: 0.7, ease: "power2.out" }, 0);
       entry.to(
         logoRef.current,
         { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
@@ -307,7 +285,10 @@ export function Elevate() {
           background: "#000",
         }}
       >
-        {/* Hue blooms */}
+        {/* Hue blooms — a per-beat colored glow rising from the bottom edge,
+            behind the beat copy. Kept low (anchored below the viewport) so it
+            never reaches the pinned can at the top: with opaque can frames a
+            top glow bled against the black can, so the light lives down here. */}
         {STACK.map((beat, i) => (
           <div
             key={`bloom-${beat.tag}`}
@@ -318,7 +299,7 @@ export function Elevate() {
             style={{
               position: "absolute",
               inset: 0,
-              background: `radial-gradient(70vh 55vh at 50% 22%, ${beat.hue}, transparent 65%)`,
+              background: `radial-gradient(130vh 60vh at 50% 118%, ${beat.hue}, transparent 70%)`,
               opacity: 0,
               pointerEvents: "none",
               zIndex: 0,
@@ -375,16 +356,17 @@ export function Elevate() {
             willChange: "bottom, height, opacity",
           }}
         >
-          {/* Topdown is the hero rest pose. Front + 6 tilt frames drive
-              the scroll-driven rise crossfade (smooth 35° → 0° morph). */}
-          <CanFrame src="/can/angle-topdown.png" innerRef={topdownRef} />
-          <CanFrame src="/can/angle-tilt31.png" innerRef={tilt31Ref} />
-          <CanFrame src="/can/angle-tilt28.png" innerRef={tilt28Ref} />
-          <CanFrame src="/can/angle-tilt22.png" innerRef={tilt22Ref} />
-          <CanFrame src="/can/angle-tilt16.png" innerRef={tilt16Ref} />
-          <CanFrame src="/can/angle-tilt10.png" innerRef={tilt10Ref} />
-          <CanFrame src="/can/angle-tilt5.png" innerRef={tilt5Ref} />
-          <CanFrame src="/can/angle-front.png" innerRef={frontRef} />
+          {/* Frame 0 is the hero rest pose; the remaining frames drive the
+              scroll-driven rise crossfade (smooth top-down → front morph). */}
+          {CAN_FRAMES.map((src, i) => (
+            <CanFrame
+              key={src}
+              src={src}
+              innerRef={(el) => {
+                frameRefs.current[i] = el;
+              }}
+            />
+          ))}
         </div>
 
         {/* Beats */}

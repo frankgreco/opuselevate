@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { CAN_FRAMES } from "./can-frames";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -51,14 +52,15 @@ export default function RootLayout({
           type="font/otf"
           crossOrigin="anonymous"
         />
-        <link rel="preload" href="/can/angle-topdown.png" as="image" />
-        <link rel="preload" href="/can/angle-tilt31.png" as="image" />
-        <link rel="preload" href="/can/angle-tilt28.png" as="image" />
-        <link rel="preload" href="/can/angle-tilt22.png" as="image" />
-        <link rel="preload" href="/can/angle-tilt16.png" as="image" />
-        <link rel="preload" href="/can/angle-tilt10.png" as="image" />
-        <link rel="preload" href="/can/angle-tilt5.png" as="image" />
-        <link rel="preload" href="/can/angle-front.png" as="image" />
+        {CAN_FRAMES.map((src) => (
+          <link
+            key={src}
+            rel="preload"
+            href={src}
+            as="image"
+            type="image/avif"
+          />
+        ))}
       </head>
       <body>{children}</body>
     </html>

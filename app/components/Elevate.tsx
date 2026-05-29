@@ -218,16 +218,17 @@ export function Elevate() {
           },
         });
 
-        // [0.02 → 0.10] Logo fades out. fromTo with explicit FROM state +
-        // immediateRender:false so (a) the entry fade-in isn't snapped
-        // over at scroll TL creation, and (b) scrolling back to progress
-        // 0 restores the logo (instead of leaving it at the tween's FROM
-        // state captured mid-entry).
+        // [0 → 0.08] Logo fades out. Anchored at progress 0 (no dead zone)
+        // so the fully-scrolled-up state IS the tween's FROM state
+        // (autoAlpha: 1) — i.e. scrolling all the way back up always
+        // restores the logo to the initial state. fromTo with explicit
+        // FROM + immediateRender:false so the entry fade-in isn't snapped
+        // over at scroll TL creation.
         tl.fromTo(
           logoRef.current,
           { autoAlpha: 1, y: 0 },
           { autoAlpha: 0, duration: 0.08, immediateRender: false },
-          0.02,
+          0,
         );
 
         // [0.08 → 0.30] Rise: can lifts + grows. 4-frame angle morph:

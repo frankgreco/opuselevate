@@ -1,14 +1,17 @@
-// Ordered can-rotation frames, sliced evenly from public/can/_source/can-rotation-greenscreen.mp4
-// over the 1s→end window (rest pose at index 0 → straight-on front view at the end), then
-// chroma-keyed to a transparent background so the can composites over any backdrop.
-// The frames bake in cold-drink condensation and on-can rim lighting for depth.
-// Elevate.tsx crossfades them on scroll to morph the camera angle; layout.tsx
-// preloads them. Single source of truth for both. NOTE: this count must match the
-// number of frame-NN.avif files in public/can/transparent/. The original opaque
-// black-background frames are kept in public/can/opaque/.
+// Ordered can-rotation frames, sliced evenly across public/can/_source/can-spin-greenscreen-v2.mp4
+// (a slow zero-gravity 360° float on a green screen), then chroma-keyed to a transparent
+// background so the can composites over any backdrop. Index 0 is the top-down hero rest pose;
+// the can then floats down and rotates a full turn, showing the front (opvs Elevate), the
+// side (ENERGY/DRIVE/FLOW) and the back (Nutrition Facts) panels in turn.
+// The chroma key is HSV hue-based (kills the green-hued contact shadow regardless of
+// brightness), with a brightness gate to protect the silver lid and green despill.
+// Elevate.tsx paints them to one <canvas> on scroll; layout.tsx preloads frame 0.
+// Single source of truth for both. NOTE: this count must match the number of frame-NN.avif
+// files in public/can/transparent-spin/. Previous non-spinning frames are in
+// public/can/transparent/, and the original opaque black-background frames in public/can/opaque/.
 export const FRAME_COUNT = 100;
 
 export const CAN_FRAMES: string[] = Array.from(
   { length: FRAME_COUNT },
-  (_, i) => `/can/transparent/frame-${String(i).padStart(2, "0")}.avif`,
+  (_, i) => `/can/transparent-spin/frame-${String(i).padStart(2, "0")}.avif`,
 );

@@ -54,6 +54,12 @@
       "sourceType": "github",
       "skillPath": "higgsfield-generate/SKILL.md",
       "computedHash": "99240f108f2e9de599a39e2ac1f69ba4914c89c17a827594c5e50f4d598689c3"
+    },
+    "remotion-best-practices": {
+      "source": "remotion-dev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/remotion/SKILL.md",
+      "computedHash": "006f8413941b59eff54a7ce64851b8a2fb79e7a3a5f1a895e97a48f01482553d"
     }
   }
 }

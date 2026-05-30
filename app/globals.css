@@ -43,14 +43,24 @@
 
 html,
 body {
-  background: var(--background);
-  /* Fill the safe-area edges with the page background on iOS Safari
-     (combined with viewport-fit=cover in the viewport meta). iOS applies
-     implicit safe-area padding to body — explicitly zeroing it ensures
-     the background reaches the home indicator and notch areas. */
+  /* Explicit background required for Safari 26 Liquid Glass fallback.
+     Per research: transparent roots often cause solid white/black bars
+     behind the toolbar when no (or conflicting) fixed elements are sampled.
+     Black here + the Starfield fixed layer (which now extends under the
+     bottom bar) gives Safari something to sample and composite real
+     content (the can) behind the glass. */
+  background: #000;
   margin: 0;
   padding: 0;
+
+  /* Restore proper document height so the GSAP pinned scrub (600% end)
+     and pin spacer can create scroll range. Using min-height instead of
+     height prevents capping the page tallness needed for the timeline. */
   min-height: 100dvh;
+
+  /* iOS Safari toolbar bleed support */
+  min-height: -webkit-fill-available;
+
   /* Hide the scrollbar but keep scrolling — scroll still drives the
      ScrollTrigger hero timeline. Firefox + legacy Edge below; WebKit via
      the ::-webkit-scrollbar rule. */
@@ -70,11 +80,10 @@ body {
 }
 
 /* Always-on full-screen black backdrop. Anchored to negative
-   safe-area-inset offsets so it physically extends BEYOND the layout
-   viewport into every iOS Safari safe area (notch, home indicator,
-   collapsible toolbar). Stable across toolbar minimize/expand cycles
-   and the dynamic viewport transitions that break `100vh`/`100lvh`.
-   Body's bg still applies as a fallback for non-iOS clients. */
+   safe-area-inset offsets so it (plus the Starfield fixed layer) physically
+   extends into the iOS Safari safe areas and under the bottom toolbar.
+   With html/body now transparent (see rule above), this layer + <main>
+   are what Safari sees behind the chrome. */
 body::before {
   content: "";
   position: fixed;

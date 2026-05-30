@@ -49,12 +49,13 @@ const STACK = [
 const CN: CSSProperties = { fontFamily: "var(--font-cn)" };
 const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 
-// Plain vh — GSAP can't tween CSS min()/calc(). On narrow screens
-// can may exceed viewport width; main has overflow:hidden so it clips.
-// Hero rest (topdown): top 41% of can peeking at viewport bottom.
-// Rest pose: the can peeks from the bottom showing the lid + shoulder, but
-// sits low enough that the "opus" wordmark on the body stays below the fold
-// at rest — it's only revealed as the can rises on scroll.
+// Using dvh (dynamic viewport) for the hero can positioning so the bottom
+// of the can can extend under iOS Safari's collapsible bottom toolbar/URL bar.
+// (vh/svh often stop above the toolbar on recent Safari.)
+// Original values restored for clean isolation test of the root
+// min-height: 100vh + -webkit-fill-available hack.
+// (We had temporarily made these more aggressive dvh to force more
+// bleed, which may have been masking or conflicting with the root sizing.)
 const HERO_BOTTOM = "-54vh";
 const HERO_HEIGHT = "110vh";
 // Top-anchored (front view): large front can dominating the upper portion
@@ -133,6 +134,16 @@ export function Elevate() {
           window.history.scrollRestoration = "manual";
         }
         window.scrollTo(0, 0);
+      }
+
+      // iOS: showing/hiding the Safari toolbar resizes the visual viewport,
+      // which makes ScrollTrigger recompute the pin-spacer and jump the pinned
+      // hero (and move the toolbar seam). Freeze that recompute, and on touch
+      // normalize scrolling so the bar toggling is suppressed. No-ops on desktop
+      // (ignoreMobileResize only affects mobile; normalizeScroll is touch-gated).
+      ScrollTrigger.config({ ignoreMobileResize: true });
+      if (ScrollTrigger.isTouch === 1) {
+        ScrollTrigger.normalizeScroll(true);
       }
 
       // 0) Load the rotation frames as off-DOM Image objects. Only the frame
@@ -380,7 +391,16 @@ export function Elevate() {
         background: "#000",
         color: "#fff",
         position: "relative",
-        overflow: "hidden",
+        // Was "hidden" — this clipped the can's large negative-bottom hang
+        // (bottom: -54vh) so it could never reach/paint behind the iOS Safari
+        // bottom toolbar even when we extended other layers. Now allowing
+        // vertical overflow (while still clipping horizontally for narrow
+        // screens where the can is wider than the viewport) so the existing
+        // rest-pose can silhouette can extend behind the URL bar.
+        // Combined with html/body { background: transparent } this lets
+        // Safari respect the painted content under the chrome.
+        overflowX: "hidden",
+        overflowY: "visible",
       }}
     >
       {/* Parallax starfield — fixed behind everything (main's #000 is the base).
@@ -419,7 +439,11 @@ export function Elevate() {
         style={{
           position: "relative",
           width: "100%",
-          height: "100vh",
+          /* Updated to 100dvh to match the body height: 100dvh recommendation.
+             Goal: let the pinned hero stage (and the can with its negative
+             bottom positioning) extend fully beneath the Safari toolbar. */
+          height: "100dvh",
+          boxSizing: "border-box",
           // Transparent so the fixed Starfield (behind) shows through; the
           // parent <main> supplies the #000 base.
           background: "transparent",
@@ -554,6 +578,11 @@ export function Elevate() {
             inset: 0,
             pointerEvents: "none",
             zIndex: 2,
+            /* Per suggestion: add safe-area padding at bottom so the beat
+               text doesn't get hidden behind the Safari toolbar when it
+               appears. The can itself is intentionally low/negative so it
+               can sit behind the bar. */
+            paddingBottom: "env(safe-area-inset-bottom)",
           }}
         >
           {STACK.map((beat, i) => (
@@ -664,6 +693,10 @@ export function Elevate() {
             pointerEvents: "auto",
             willChange: "opacity, transform",
             zIndex: 3,
+            /* Safe-area padding at bottom so the form isn't hidden behind
+               the Safari toolbar (per the padding part of the suggestion).
+               Decorative low elements like the can can still bleed under. */
+            paddingBottom: "env(safe-area-inset-bottom)",
           }}
         >
           <div style={{ display: "inline-block" }}>

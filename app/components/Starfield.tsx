@@ -83,13 +83,19 @@ export function Starfield() {
     };
 
     const resize = () => {
+      // Size from the canvas's own fixed box (which spans the layout viewport +
+      // safe areas via its CSS insets), NOT window.innerHeight — innerHeight is
+      // the iOS *visual* viewport (above the toolbar), which left a black seam
+      // behind the collapsing Safari toolbar. The layout-viewport box is stable
+      // across toolbar collapse/expand, so guard against pointless rebuilds.
+      const nw = canvas.clientWidth || window.innerWidth;
+      const nh = canvas.clientHeight || window.innerHeight;
+      if (nw === w && nh === h && stars.length) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = window.innerWidth;
-      h = window.innerHeight;
+      w = nw;
+      h = nh;
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       build();
     };
@@ -215,23 +221,50 @@ export function Starfield() {
 
   return (
     <>
-      <canvas
-        ref={canvasRef}
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      />
-      {/* Vignette — deepens the edges so the field reads as a void, like the
-          reference. Above the stars, below all content. */}
+      {/* Fixed wrapper for stars. We use negative bottom inset here because
+          this is a real position:fixed element. Safari 26 Liquid Glass
+          samples fixed elements near the edges (their bg + backdrop-filter)
+          to decide how to composite content behind the toolbar.
+          Pseudo-elements and deep absolutes are ignored. Having this layer
+          extend under the bar lets the can (absolute in the stage) paint
+          behind the glass. */}
       <div
         aria-hidden
         style={{
           position: "fixed",
-          inset: 0,
+          top: "calc(-1 * env(safe-area-inset-top, 0px))",
+          right: "calc(-1 * env(safe-area-inset-right, 0px))",
+          /* Restore negative bottom on the stars canvas wrapper.
+             This is a real position:fixed element that Safari 26 Liquid Glass
+             samples for toolbar tinting/bleed. Having it extend under the
+             bottom bar gives Safari a fixed layer to composite content
+             (including the absolute can from the main stage) behind the
+             toolbar. The vignette stays at bottom:0 to avoid over-bleed. */
+          bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))",
+          left: "calc(-1 * env(safe-area-inset-left, 0px))",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          aria-hidden
+          style={{ display: "block", width: "100%", height: "100%" }}
+        />
+      </div>
+      {/* Vignette — deepens the edges so the field reads as a void.
+          Only extends negative on top/left/right (bottom stopped to avoid
+          breaking the can's toolbar bleed — see stars wrapper). */}
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          top: "calc(-1 * env(safe-area-inset-top, 0px))",
+          right: "calc(-1 * env(safe-area-inset-right, 0px))",
+          /* Stop forcing negative bottom (see comment on the stars wrapper above).
+             The dark vignette no longer needs to bleed under the bottom toolbar. */
+          bottom: 0,
+          left: "calc(-1 * env(safe-area-inset-left, 0px))",
           zIndex: 0,
           pointerEvents: "none",
           background: `radial-gradient(120% 120% at 50% 42%, transparent 55%, rgba(0,0,0,${CFG.vignette}) 100%)`,

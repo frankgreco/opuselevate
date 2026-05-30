@@ -7,8 +7,8 @@
 // brightness), with a brightness gate to protect the silver lid and green despill.
 // Elevate.tsx paints them to one <canvas> on scroll; layout.tsx preloads frame 0.
 // Single source of truth for both. NOTE: this count must match the number of frame-NN.avif
-// files in public/can/transparent-spin/. Previous non-spinning frames are in
-// public/can/transparent/, and the original opaque black-background frames in public/can/opaque/.
+// files in public/can/transparent-spin/. The original opaque black-background frames are
+// kept in public/can/opaque/.
 export const FRAME_COUNT = 100;
 
 export const CAN_FRAMES: string[] = Array.from(

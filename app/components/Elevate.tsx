@@ -48,6 +48,62 @@ const STACK = [
 const CN: CSSProperties = { fontFamily: "var(--font-cn)" };
 const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 
+// "#rrggbb" → "r, g, b" for building rgba() gradient stops.
+function hexToRgb(hex: string): string {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+}
+
+// TEMPORARY (dev tuning): one labelled slider for the backlight panel.
+function Dial({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  fmt,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  fmt?: (v: number) => string;
+}) {
+  return (
+    <label
+      style={{
+        ...MONO,
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        fontSize: 9,
+        letterSpacing: ".06em",
+        color: "rgba(255,255,255,0.6)",
+        width: 92,
+      }}
+    >
+      <span style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
+        <span>{label}</span>
+        <span style={{ color: "#fff" }}>{fmt ? fmt(value) : String(value)}</span>
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        style={{ width: "100%", accentColor: "#cdd9ff" }}
+      />
+    </label>
+  );
+}
+
 // Plain vh — GSAP can't tween CSS min()/calc(). On narrow screens
 // can may exceed viewport width; main has overflow:hidden so it clips.
 // Hero rest (topdown): top 41% of can peeking at viewport bottom.
@@ -97,6 +153,21 @@ export function Elevate() {
   });
   // TEMPORARY: stakeholder toggle between the flat SVG logo and the 3D-glass one.
   const [glassLogo, setGlassLogo] = useState(false);
+  // TEMPORARY (dev tuning): live controls for the can backlight halo, driven by
+  // the panel at the top of the screen. Once dialed in, bake these values into
+  // the backlight style + pulse and delete the panel, this state, and the
+  // pulse effect below.
+  const [bl, setBl] = useState({
+    color: "#e0e9ff",
+    intensity: 1, // multiplies the gradient alphas
+    size: 0.45, // 0..1 → how far the halo spreads past the can box
+    blur: 26, // px
+    posY: 47, // % vertical centre of the glow behind the can
+    spread: 74, // % outer (transparent) stop
+    pulseOn: true,
+    pulseAmt: 1.08, // breathing scale
+    pulseSpeed: 4.5, // s per half-cycle
+  });
 
   const root = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -109,6 +180,7 @@ export function Elevate() {
   // layers — one GPU compositor layer each — blew past iOS Safari's per-tab
   // memory ceiling and crashed the page on load.)
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const backlightRef = useRef<HTMLDivElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const beatRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
   const bloomRefs = useRef<Array<HTMLDivElement | null>>([null, null, null]);
@@ -188,6 +260,7 @@ export function Elevate() {
       // (index 0) peeks from the bottom edge, logo centered, everything else
       // hidden. The canvas starts hidden; the entry timeline fades it in.
       gsap.set(canvasRef.current, { autoAlpha: 0 });
+      gsap.set(backlightRef.current, { autoAlpha: 0 });
       gsap.set(logoRef.current, { autoAlpha: 0, y: 12 });
       gsap.set(canStageRef.current, {
         bottom: HERO_BOTTOM,
@@ -339,14 +412,68 @@ export function Elevate() {
       // No spin, no descent — the page starts at hero rest.
       const entry = gsap.timeline();
       entry.to(canvasRef.current, { autoAlpha: 1, duration: 0.7, ease: "power2.out" }, 0);
+      // Backlight blooms in a touch slower/softer than the can itself.
+      entry.to(
+        backlightRef.current,
+        { autoAlpha: 1, duration: 1.1, ease: "power2.out" },
+        0,
+      );
       entry.to(
         logoRef.current,
         { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
         0.15,
       );
+
+      // (Backlight breathing pulse lives in a state-driven effect below so the
+      // dev panel can retune it live.)
     },
     { scope: root },
   );
+
+  // Backlight breathing pulse — recreated whenever its dials change. Driven on
+  // transform only, so it never collides with the GSAP autoAlpha fade that owns
+  // the halo's opacity/visibility.
+  useEffect(() => {
+    const el = backlightRef.current;
+    if (!el) return;
+    if (!bl.pulseOn) {
+      gsap.to(el, { scale: 1, duration: 0.4, overwrite: "auto" });
+      return;
+    }
+    const tw = gsap.fromTo(
+      el,
+      { scale: 1 },
+      {
+        scale: bl.pulseAmt,
+        duration: bl.pulseSpeed,
+        ease: "sine.inOut",
+        repeat: -1,
+        yoyo: true,
+        overwrite: "auto",
+      },
+    );
+    return () => {
+      tw.kill();
+    };
+  }, [bl.pulseOn, bl.pulseAmt, bl.pulseSpeed]);
+
+  // Backlight look — React owns these; opacity + transform stay GSAP's so
+  // slider re-renders never clobber the fade-in or the pulse.
+  const blRgb = hexToRgb(bl.color);
+  const blStyle: CSSProperties = {
+    position: "absolute",
+    inset: `${-(8 + bl.size * 28)}% ${-(16 + bl.size * 44)}%`,
+    zIndex: 0,
+    pointerEvents: "none",
+    background: `radial-gradient(closest-side at 50% ${bl.posY}%, rgba(${blRgb}, ${(
+      0.62 * bl.intensity
+    ).toFixed(3)}), rgba(${blRgb}, ${(0.2 * bl.intensity).toFixed(
+      3,
+    )}) 46%, transparent ${bl.spread}%)`,
+    filter: `blur(${bl.blur}px)`,
+    mixBlendMode: "screen",
+    willChange: "opacity, transform",
+  };
 
   return (
     <main
@@ -384,6 +511,168 @@ export function Elevate() {
       >
         Logo: {glassLogo ? "Glass" : "Flat"}
       </button>
+
+      {/* TEMPORARY (dev tuning): live backlight dials. Delete this panel along
+          with the `bl` state, the pulse effect, and hexToRgb/Dial once the look
+          is locked in. */}
+      <div
+        style={{
+          position: "fixed",
+          top: 12,
+          left: 12,
+          right: 168,
+          zIndex: 50,
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: "10px 16px",
+          padding: "10px 14px",
+          borderRadius: 12,
+          background: "rgba(10,10,12,0.72)",
+          border: "1px solid rgba(255,255,255,0.14)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+        }}
+      >
+        <span
+          style={{
+            ...MONO,
+            fontSize: 10,
+            letterSpacing: ".14em",
+            textTransform: "uppercase",
+            color: "#fff",
+            fontWeight: 700,
+          }}
+        >
+          Backlight
+        </span>
+        <label
+          style={{
+            ...MONO,
+            fontSize: 9,
+            color: "rgba(255,255,255,0.6)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          Color
+          <input
+            type="color"
+            value={bl.color}
+            onChange={(e) => setBl((s) => ({ ...s, color: e.target.value }))}
+            style={{
+              width: 28,
+              height: 20,
+              padding: 0,
+              background: "none",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 4,
+              cursor: "pointer",
+            }}
+          />
+        </label>
+        <Dial
+          label="Intensity"
+          min={0}
+          max={1.6}
+          step={0.02}
+          value={bl.intensity}
+          onChange={(v) => setBl((s) => ({ ...s, intensity: v }))}
+          fmt={(v) => `${Math.round(v * 100)}%`}
+        />
+        <Dial
+          label="Size"
+          min={0}
+          max={1}
+          step={0.01}
+          value={bl.size}
+          onChange={(v) => setBl((s) => ({ ...s, size: v }))}
+          fmt={(v) => `${Math.round(v * 100)}%`}
+        />
+        <Dial
+          label="Blur"
+          min={0}
+          max={80}
+          step={1}
+          value={bl.blur}
+          onChange={(v) => setBl((s) => ({ ...s, blur: v }))}
+          fmt={(v) => `${v}px`}
+        />
+        <Dial
+          label="Pos Y"
+          min={20}
+          max={70}
+          step={1}
+          value={bl.posY}
+          onChange={(v) => setBl((s) => ({ ...s, posY: v }))}
+          fmt={(v) => `${v}%`}
+        />
+        <Dial
+          label="Spread"
+          min={50}
+          max={95}
+          step={1}
+          value={bl.spread}
+          onChange={(v) => setBl((s) => ({ ...s, spread: v }))}
+          fmt={(v) => `${v}%`}
+        />
+        <label
+          style={{
+            ...MONO,
+            fontSize: 9,
+            color: "rgba(255,255,255,0.6)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={bl.pulseOn}
+            onChange={(e) => setBl((s) => ({ ...s, pulseOn: e.target.checked }))}
+          />
+          Pulse
+        </label>
+        <Dial
+          label="Amt"
+          min={1}
+          max={1.3}
+          step={0.005}
+          value={bl.pulseAmt}
+          onChange={(v) => setBl((s) => ({ ...s, pulseAmt: v }))}
+          fmt={(v) => v.toFixed(2)}
+        />
+        <Dial
+          label="Speed"
+          min={1}
+          max={10}
+          step={0.1}
+          value={bl.pulseSpeed}
+          onChange={(v) => setBl((s) => ({ ...s, pulseSpeed: v }))}
+          fmt={(v) => `${v.toFixed(1)}s`}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            void navigator.clipboard?.writeText(JSON.stringify(bl, null, 2));
+          }}
+          style={{
+            ...MONO,
+            fontSize: 9,
+            letterSpacing: ".08em",
+            textTransform: "uppercase",
+            color: "#fff",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 6,
+            padding: "5px 9px",
+            cursor: "pointer",
+          }}
+        >
+          Copy values
+        </button>
+      </div>
 
       <div
         ref={stageRef}
@@ -469,6 +758,13 @@ export function Elevate() {
             willChange: "bottom, height, opacity",
           }}
         >
+          {/* Backlight — a soft halo behind the can. The rotation frames are
+              transparent, so this glow spills around the can's silhouette (the
+              opaque can masks its bright centre), reading as a backlit rim that
+              lifts the can off the black void. Lives inside the can stage, so it
+              tracks the can as it rises and grows on scroll. */}
+          <div ref={backlightRef} aria-hidden style={blStyle} />
+
           {/* Single canvas: the rest-pose frame is painted on mount, then the
               scroll timeline swaps frames on it (smooth top-down → front morph).
               object-fit:contain scales the source-resolution backing store into
@@ -484,6 +780,7 @@ export function Elevate() {
               objectFit: "contain",
               opacity: 0,
               pointerEvents: "none",
+              zIndex: 1,
             }}
           />
         </div>

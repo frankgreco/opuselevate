@@ -61,6 +61,10 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           background: "rgba(255,255,255,0.02)",
           border: ".5px solid var(--hair)",
           textAlign: "left",
+          // Shrink the whole panel ~20% uniformly while leaving every internal
+          // responsive unit (min()/vw/etc.) untouched — see the form below.
+          transform: "scale(0.8)",
+          transformOrigin: "top center",
         }}
       >
         <div
@@ -87,7 +91,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           }}
         >
           Position{" "}
-          <span style={{ color: "var(--foreground)" }}>#{state.position}</span>{" "}
+          <span style={{ color: "var(--silver)" }}>#{state.position}</span>{" "}
           of {state.position + 84}. We&rsquo;ll write before launch.
         </div>
       </div>
@@ -105,6 +109,11 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
         border: ".5px solid var(--hair)",
         padding: "16px 18px 0",
         textAlign: "left",
+        // Shrink the whole panel (box + input + button + type) ~20% uniformly.
+        // A scale keeps all the responsive sizing — width min(360px, 86vw), the
+        // em/px paddings, the calc() button bleed — intact, just rendered at 0.8.
+        transform: "scale(0.8)",
+        transformOrigin: "top center",
       }}
     >
       <div
@@ -115,12 +124,13 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           lineHeight: 0.9,
           textTransform: "uppercase",
           letterSpacing: "-.01em",
+          color: "var(--silver)",
         }}
       >
         Early Access
       </div>
       <div style={{ height: 6 }} />
-      <div style={{ height: 6, background: "rgba(255,255,255,0.85)" }} />
+      <div style={{ height: 6, background: "var(--silver)" }} />
 
       <div
         style={{
@@ -167,7 +177,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           height: 50,
           border: "none",
           borderTop: ".5px solid var(--hair)",
-          background: pending ? "rgba(255,255,255,0.6)" : "#fff",
+          background: pending ? "rgba(196,196,196,0.6)" : "var(--silver)",
           color: "#000",
           fontSize: 11,
           fontWeight: 600,

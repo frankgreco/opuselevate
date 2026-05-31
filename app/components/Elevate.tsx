@@ -49,6 +49,66 @@ const STACK = [
 const CN: CSSProperties = { fontFamily: "var(--font-cn)" };
 const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 
+// Brand silver — sampled from the can's aluminum lid (~#c6c6c6); it's also the
+// wordmark SVG's native fill (#c4c4c4). Used in place of pure white for the
+// brand display elements (the flat logo and the ENERGY/DRIVE/FLOW beat names).
+// Defined once in globals.css (:root --silver).
+const SILVER = "var(--silver)";
+
+// White base for the can backlight halo (cool white, matches the starfield
+// tint). The halo morphs from this to each beat's hue on scroll (see below).
+const BACKLIGHT_WHITE: [number, number, number] = [224, 233, 255];
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// Beat transition styles (stakeholder experiment — cycled via the top-right
+// control). Each beat animates a single 0→1 "visibility" proxy on scroll;
+// applyBeat() maps that to opacity + scale/blur/translate for the active mode,
+// so switching is instant (no timeline rebuild). enter* = the hidden pose it
+// grows FROM on the way in; exit* = the hidden pose it goes TO on the way out.
+type BeatMode = {
+  name: string;
+  enterScale: number;
+  exitScale: number;
+  enterY: number;
+  exitY: number;
+  enterBlur: number;
+  exitBlur: number;
+};
+const BEAT_MODES: BeatMode[] = [
+  // Punch toward the viewer: each word grows from small, then flies past as the
+  // next grows in from small. (The stakeholders' "zoom them in" ask.)
+  { name: "Zoom In", enterScale: 0.72, exitScale: 1.32, enterY: 0, exitY: 0, enterBlur: 6, exitBlur: 8 },
+  // Recede: each word starts large, settles to 1, then shrinks away.
+  { name: "Zoom Out", enterScale: 1.3, exitScale: 0.74, enterY: 0, exitY: 0, enterBlur: 6, exitBlur: 8 },
+  // Symmetric pulse: grow in from small, shrink back out the same way.
+  { name: "Zoom In·Out", enterScale: 0.72, exitScale: 0.72, enterY: 0, exitY: 0, enterBlur: 6, exitBlur: 6 },
+  // The original: blur + vertical drift, no scale (baseline for comparison).
+  { name: "Fade", enterScale: 1, exitScale: 1, enterY: 40, exitY: -40, enterBlur: 8, exitBlur: 8 },
+];
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+// Shared pill style for the (temporary) top-right stakeholder controls.
+const PILL: CSSProperties = {
+  ...MONO,
+  fontSize: 11,
+  letterSpacing: ".12em",
+  textTransform: "uppercase",
+  color: "#fff",
+  background: "rgba(255,255,255,0.08)",
+  border: "1px solid rgba(255,255,255,0.22)",
+  borderRadius: 999,
+  padding: "8px 14px",
+  cursor: "pointer",
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+};
+
 // Using dvh (dynamic viewport) for the hero can positioning so the bottom
 // of the can can extend under iOS Safari's collapsible bottom toolbar/URL bar.
 // (vh/svh often stop above the toolbar on recent Safari.)
@@ -98,8 +158,21 @@ export function Elevate() {
     position: null,
   });
   // TEMPORARY: stakeholder toggle between the flat SVG logo and the 3D-glass one.
-  // Defaults to glass; the button still flips back to flat.
-  const [glassLogo, setGlassLogo] = useState(true);
+  // Defaults to flat; the button flips to glass.
+  const [glassLogo, setGlassLogo] = useState(false);
+  // Stakeholder toggle for the parallax starfield. Defaults off.
+  const [showStarfield, setShowStarfield] = useState(false);
+  // Stakeholder experiment: how the ENERGY/DRIVE/FLOW beats transition.
+  // Defaults to a zoom (their ask); cycle the top-right control to compare.
+  const [beatMode, setBeatMode] = useState(0);
+  const beatModeRef = useRef(0);
+  const reapplyBeatsRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    beatModeRef.current = beatMode;
+    // Re-render the currently-shown beat with the new mode so the switch reads
+    // immediately, not only on the next scroll tick.
+    reapplyBeatsRef.current?.();
+  }, [beatMode]);
 
   const root = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -198,6 +271,58 @@ export function Elevate() {
       if (isReady(images[0])) drawFrame(0);
       else images[0].addEventListener("load", () => drawFrame(0), { once: true });
 
+      // Backlight tint proxy. The halo behind the can is cool-white on the home
+      // screen, then morphs to each beat's hue while that beat is shown and back
+      // to white between/after (driven from the scroll timeline below). We rewrite
+      // the radial-gradient each frame instead of tweening `background` directly:
+      // GSAP owns this element's opacity (autoAlpha) and transform (breathing
+      // scale), both independent of `background`, so writing it here is safe — and
+      // React won't clobber it on re-render since the style-prop value never
+      // changes (React only re-applies style keys whose values differ).
+      const blColor = {
+        r: BACKLIGHT_WHITE[0],
+        g: BACKLIGHT_WHITE[1],
+        b: BACKLIGHT_WHITE[2],
+      };
+      const setBacklight = () => {
+        const el = backlightRef.current;
+        if (!el) return;
+        const c = `${Math.round(blColor.r)}, ${Math.round(blColor.g)}, ${Math.round(blColor.b)}`;
+        el.style.background = `radial-gradient(closest-side at 50% 56%, rgba(${c}, 0.719), rgba(${c}, 0.232) 46%, transparent 50%)`;
+      };
+
+      // Per-beat visibility proxies + renderer. The scroll timeline tweens each
+      // beat's `v` 0→1 (enter) and 1→0 (exit); applyBeat maps that to the active
+      // mode's opacity/scale/blur/translate. We write inline styles directly —
+      // GSAP only touches these proxies, not the beat elements, and React won't
+      // clobber them (its style prop keeps opacity:0 and never changes). Driving
+      // a normalized proxy (not the element) is what lets the mode swap live.
+      const beatViz = beatRefs.current.map(() => ({
+        v: 0,
+        phase: "enter" as "enter" | "exit",
+      }));
+      const applyBeat = (i: number, phase: "enter" | "exit") => {
+        const el = beatRefs.current[i];
+        if (!el) return;
+        const s = beatViz[i];
+        s.phase = phase;
+        const v = s.v;
+        const m = BEAT_MODES[beatModeRef.current] ?? BEAT_MODES[0];
+        const k = 1 - v; // exit progress (v runs 1→0 on the way out)
+        const scale =
+          phase === "enter" ? lerp(m.enterScale, 1, v) : lerp(1, m.exitScale, k);
+        const y = phase === "enter" ? lerp(m.enterY, 0, v) : lerp(0, m.exitY, k);
+        const blur =
+          phase === "enter" ? lerp(m.enterBlur, 0, v) : lerp(0, m.exitBlur, k);
+        el.style.opacity = String(v);
+        el.style.visibility = v > 0.001 ? "visible" : "hidden";
+        el.style.transform = `translateY(${y.toFixed(2)}px) scale(${scale.toFixed(4)})`;
+        el.style.filter = blur > 0.01 ? `blur(${blur.toFixed(2)}px)` : "none";
+      };
+      // Let the React mode toggle re-render whatever beat is on screen.
+      reapplyBeatsRef.current = () =>
+        beatViz.forEach((s, i) => applyBeat(i, s.phase));
+
       // 1) Set initial state: hero rest pose immediately. The rest-pose frame
       // (index 0) peeks from the bottom edge, logo centered, everything else
       // hidden. The canvas starts hidden; the entry timeline fades it in.
@@ -211,11 +336,8 @@ export function Elevate() {
       });
       // (Note: the inline-style block above already sets the same values;
       // this gsap.set is here so GSAP's internal cache is in sync.)
-      gsap.set(beatRefs.current, {
-        autoAlpha: 0,
-        y: 40,
-        filter: "blur(8px)",
-      });
+      // Beats start hidden, in the active mode's "enter" pose (v=0).
+      beatRefs.current.forEach((_, i) => applyBeat(i, "enter"));
       gsap.set(bloomRefs.current, { autoAlpha: 0 });
       gsap.set(waitlistRef.current, { autoAlpha: 0, y: 40 });
 
@@ -287,18 +409,19 @@ export function Elevate() {
         const beatHold = 0.10;
         const beatFade = 0.05;
         beatStarts.forEach((start, i) => {
-          const beat = beatRefs.current[i];
           const bloom = bloomRefs.current[i];
+          const viz = beatViz[i];
+          const [hr, hg, hb] = hexToRgb(STACK[i].hue);
 
+          // Beat IN: drive v 0→1; applyBeat renders it per the active mode.
           tl.to(
-            beat,
+            viz,
             {
-              autoAlpha: 1,
-              y: 0,
-              filter: "blur(0px)",
+              v: 1,
               duration: beatFade,
               ease: "power2.out",
               immediateRender: false,
+              onUpdate: () => applyBeat(i, "enter"),
             },
             start,
           );
@@ -307,21 +430,51 @@ export function Elevate() {
             { autoAlpha: 0.22, duration: beatFade, immediateRender: false },
             start,
           );
+          // Backlight halo morphs white → this beat's hue as the beat fades in,
+          // so the rim light around the can picks up the section's colour.
           tl.to(
-            beat,
+            blColor,
             {
-              autoAlpha: 0,
-              y: -40,
-              filter: "blur(8px)",
+              r: hr,
+              g: hg,
+              b: hb,
+              duration: beatFade,
+              ease: "power2.out",
+              immediateRender: false,
+              onUpdate: setBacklight,
+            },
+            start,
+          );
+          // Beat OUT: drive v 1→0.
+          tl.to(
+            viz,
+            {
+              v: 0,
               duration: beatFade,
               ease: "power2.in",
               immediateRender: false,
+              onUpdate: () => applyBeat(i, "exit"),
             },
             start + beatHold + beatFade,
           );
           tl.to(
             bloom,
             { autoAlpha: 0, duration: beatFade, immediateRender: false },
+            start + beatHold + beatFade,
+          );
+          // ...and back to cool-white as the beat fades out, so the gaps between
+          // beats — and the home/waitlist phases — keep the original white halo.
+          tl.to(
+            blColor,
+            {
+              r: BACKLIGHT_WHITE[0],
+              g: BACKLIGHT_WHITE[1],
+              b: BACKLIGHT_WHITE[2],
+              duration: beatFade,
+              ease: "power2.in",
+              immediateRender: false,
+              onUpdate: setBacklight,
+            },
             start + beatHold + beatFade,
           );
         });
@@ -404,35 +557,47 @@ export function Elevate() {
       }}
     >
       {/* Parallax starfield — fixed behind everything (main's #000 is the base).
-          Section backgrounds must stay transparent for it to show through. */}
-      <Starfield />
+          Section backgrounds must stay transparent for it to show through.
+          Off by default; toggled on via the top-right control. */}
+      {showStarfield && <Starfield />}
 
-      {/* TEMPORARY stakeholder control: flip the hero wordmark between the flat
-          SVG and the 3D-glass mark. Remove along with HeroGlassLogo / glassLogo. */}
-      <button
-        type="button"
-        onClick={() => setGlassLogo((g) => !g)}
+      {/* TEMPORARY stakeholder controls (top-right): toggle the starfield, and
+          flip the hero wordmark between the flat SVG and the 3D-glass mark.
+          Remove along with HeroGlassLogo / glassLogo. */}
+      <div
         style={{
-          ...MONO,
           position: "fixed",
           top: 16,
           right: 16,
           zIndex: 50,
-          fontSize: 11,
-          letterSpacing: ".12em",
-          textTransform: "uppercase",
-          color: "#fff",
-          background: "rgba(255,255,255,0.08)",
-          border: "1px solid rgba(255,255,255,0.22)",
-          borderRadius: 999,
-          padding: "8px 14px",
-          cursor: "pointer",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 8,
         }}
       >
-        Logo: {glassLogo ? "Glass" : "Flat"}
-      </button>
+        <button
+          type="button"
+          onClick={() => setShowStarfield((s) => !s)}
+          style={PILL}
+        >
+          Stars: {showStarfield ? "On" : "Off"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setGlassLogo((g) => !g)}
+          style={PILL}
+        >
+          Logo: {glassLogo ? "Glass" : "Flat"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setBeatMode((m) => (m + 1) % BEAT_MODES.length)}
+          style={PILL}
+        >
+          Beats: {BEAT_MODES[beatMode].name}
+        </button>
+      </div>
 
       <div
         ref={stageRef}
@@ -496,10 +661,12 @@ export function Elevate() {
               alt="Opus Elevate"
               style={{
                 display: "block",
-                // Bigger on mobile (78vw min 260px), same on desktop (caps at 420px).
-                width: "min(420px, max(78vw, 260px))",
+                // Bumped up a touch (was 420/78vw/260) so the flat mark reads
+                // closer in size to the larger 3D-glass version.
+                width: "min(480px, max(84vw, 290px))",
                 height: "auto",
-                filter: "brightness(0) invert(1)",
+                // No filter: the SVG's native fill (#c4c4c4) is the can's silver.
+                // (Was brightness(0) invert(1), which forced it to pure white.)
                 userSelect: "none",
                 pointerEvents: "none",
               }}
@@ -611,7 +778,7 @@ export function Elevate() {
                   letterSpacing: "-0.02em",
                   margin: 0,
                   textTransform: "uppercase",
-                  color: "#fff",
+                  color: SILVER,
                 }}
               >
                 {beat.name}

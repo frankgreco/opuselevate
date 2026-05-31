@@ -28,6 +28,10 @@
   --dim: rgba(255, 255, 255, 0.5);
   --hair: rgba(255, 255, 255, 0.14);
   --accent: #ffffff;
+  /* Brand silver — sampled from the can's aluminum lid (~#c6c6c6); also the
+     wordmark SVG's native fill (#c4c4c4). Used in place of pure white for the
+     brand display elements (logo, beat names, waitlist). */
+  --silver: #c4c4c4;
   --font-cn: "HelveticaNeueCn", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 

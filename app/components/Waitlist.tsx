@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type CSSProperties } from "react";
 import { joinWaitlist } from "../actions/waitlist";
 
 export type WaitlistState = {
@@ -13,6 +13,11 @@ type WaitlistProps = {
   onSubmitted: (position: number) => void;
   inputId?: string;
 };
+
+const CN: CSSProperties = { fontFamily: "var(--font-cn)" };
+const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
+// Gold tier accent (Drive) — used for the success headline.
+const ACCENT = "#a8843e";
 
 const BASE_POSITION = 2106;
 
@@ -46,32 +51,35 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
     });
   }
 
+  // Success — squared panel matching the facts-label card.
   if (state.submitted && state.position !== null) {
     return (
       <div
         style={{
-          padding: "20px 22px",
-          borderRadius: 16,
-          background: "rgba(196,196,196,.04)",
+          width: "min(360px, 86vw)",
+          padding: "20px 18px",
+          background: "rgba(255,255,255,0.02)",
           border: ".5px solid var(--hair)",
+          textAlign: "left",
         }}
       >
         <div
           style={{
-            fontFamily: "var(--font-cn)",
+            ...CN,
             fontWeight: 900,
-            fontSize: 28,
-            lineHeight: 1,
+            fontSize: 30,
+            lineHeight: 0.9,
             letterSpacing: ".01em",
-            color: "var(--accent)",
+            textTransform: "uppercase",
+            color: ACCENT,
           }}
         >
           YOU&rsquo;RE IN.
         </div>
         <div
           style={{
+            ...MONO,
             marginTop: 8,
-            fontFamily: "var(--font-mono)",
             fontSize: 11,
             lineHeight: 1.5,
             letterSpacing: ".04em",
@@ -86,68 +94,97 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
     );
   }
 
+  // Supplement-facts panel: heavy header + rule, email entry line, CTA bar
+  // bleeding to the panel edges.
   return (
-    <>
-      <form
-        onSubmit={onSubmit}
-        className="gap-1.5 sm:gap-2"
+    <form
+      onSubmit={onSubmit}
+      style={{
+        width: "min(360px, 86vw)",
+        background: "rgba(255,255,255,0.02)",
+        border: ".5px solid var(--hair)",
+        padding: "16px 18px 0",
+        textAlign: "left",
+      }}
+    >
+      <div
         style={{
-          display: "flex",
+          ...CN,
+          fontWeight: 900,
+          fontSize: 30,
+          lineHeight: 0.9,
+          textTransform: "uppercase",
+          letterSpacing: "-.01em",
         }}
       >
-        <input
-          id={inputId}
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@email.com"
-          aria-label="Email address"
-          className="px-2.5 sm:px-4"
-          style={{
-            flex: 1,
-            background: "transparent",
-            border: ".5px solid var(--hair)",
-            outline: "none",
-            minWidth: 0,
-            height: 44,
-            fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            lineHeight: 1,
-            letterSpacing: ".01em",
-            color: "var(--foreground)",
-          }}
-        />
-        <button
-          type="submit"
-          disabled={pending}
-          className="px-2.5 sm:px-[18px] tracking-[.14em] sm:tracking-[.24em]"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "var(--foreground)",
-            color: "var(--background)",
-            border: "none",
-            height: 44,
-            cursor: pending ? "default" : "pointer",
-            fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            lineHeight: 1,
-            textTransform: "uppercase",
-            borderRadius: 0,
-            opacity: pending ? 0.6 : 1,
-          }}
-        >
-          {pending ? "Submitting…" : "Early Access"}
-        </button>
-      </form>
+        Early Access
+      </div>
+      <div style={{ height: 6 }} />
+      <div style={{ height: 6, background: "rgba(255,255,255,0.85)" }} />
+
+      <div
+        style={{
+          ...MONO,
+          fontSize: 8,
+          letterSpacing: ".28em",
+          textTransform: "uppercase",
+          color: "var(--dim)",
+          padding: "12px 0 6px",
+        }}
+      >
+        Your Email
+      </div>
+      <input
+        id={inputId}
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="your@email.com"
+        aria-label="Email address"
+        style={{
+          ...MONO,
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          borderBottom: "1px solid rgba(255,255,255,0.25)",
+          outline: "none",
+          padding: "0 0 10px",
+          fontSize: 13,
+          letterSpacing: ".04em",
+          color: "var(--foreground)",
+        }}
+      />
+
+      <button
+        type="submit"
+        disabled={pending}
+        style={{
+          ...MONO,
+          width: "calc(100% + 36px)",
+          marginLeft: -18,
+          marginTop: 16,
+          height: 50,
+          border: "none",
+          borderTop: ".5px solid var(--hair)",
+          background: pending ? "rgba(255,255,255,0.6)" : "#fff",
+          color: "#000",
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: ".24em",
+          textTransform: "uppercase",
+          cursor: pending ? "default" : "pointer",
+        }}
+      >
+        {pending ? "Submitting…" : "Join the Waitlist"}
+      </button>
+
       {error && (
         <p
           aria-live="polite"
           style={{
-            marginTop: 12,
-            fontFamily: "var(--font-mono)",
+            ...MONO,
+            margin: "12px 0 16px",
             fontSize: 10,
             letterSpacing: ".2em",
             textTransform: "uppercase",
@@ -157,6 +194,6 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
           {error}
         </p>
       )}
-    </>
+    </form>
   );
 }

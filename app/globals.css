@@ -23,11 +23,11 @@
 }
 
 :root {
-  --background: #0c0c0c;
-  --foreground: #c4c4c4;
-  --dim: rgba(196, 196, 196, 0.55);
-  --hair: rgba(196, 196, 196, 0.13);
-  --accent: #dcdcdc;
+  --background: #000000;
+  --foreground: #ffffff;
+  --dim: rgba(255, 255, 255, 0.5);
+  --hair: rgba(255, 255, 255, 0.14);
+  --accent: #ffffff;
   --font-cn: "HelveticaNeueCn", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -41,13 +41,59 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html,
 body {
-  background: var(--background);
+  /* Explicit background required for Safari 26 Liquid Glass fallback.
+     Per research: transparent roots often cause solid white/black bars
+     behind the toolbar when no (or conflicting) fixed elements are sampled.
+     Black here + the Starfield fixed layer (which now extends under the
+     bottom bar) gives Safari something to sample and composite real
+     content (the can) behind the glass. */
+  background: #000;
+  margin: 0;
+  padding: 0;
+
+  /* Restore proper document height so the GSAP pinned scrub (600% end)
+     and pin spacer can create scroll range. Using min-height instead of
+     height prevents capping the page tallness needed for the timeline. */
+  min-height: 100dvh;
+
+  /* iOS Safari toolbar bleed support */
+  min-height: -webkit-fill-available;
+
+  /* Hide the scrollbar but keep scrolling — scroll still drives the
+     ScrollTrigger hero timeline. Firefox + legacy Edge below; WebKit via
+     the ::-webkit-scrollbar rule. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+body {
   color: var(--foreground);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 13px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Always-on full-screen black backdrop. Anchored to negative
+   safe-area-inset offsets so it (plus the Starfield fixed layer) physically
+   extends into the iOS Safari safe areas and under the bottom toolbar.
+   With html/body now transparent (see rule above), this layer + <main>
+   are what Safari sees behind the chrome. */
+body::before {
+  content: "";
+  position: fixed;
+  top: calc(-1 * env(safe-area-inset-top, 0px));
+  right: calc(-1 * env(safe-area-inset-right, 0px));
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  left: calc(-1 * env(safe-area-inset-left, 0px));
+  background: var(--background);
+  z-index: -10;
+  pointer-events: none;
 }
 
 ::selection {
@@ -90,4 +136,13 @@ body {
     transform: none;
     transition: none;
   }
+}
+
+/* Elevate page animations are driven by GSAP. */
+
+/* Hero logo sits in the upper third on every viewport so it clears
+   the chrome top of the can (visible from ~55vh down). At top: 50%
+   the logo would overlap the can on tall/wide desktop viewports. */
+.el-hero-logo {
+  top: 30%;
 }

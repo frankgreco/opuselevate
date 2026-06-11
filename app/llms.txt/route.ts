@@ -1,0 +1,106 @@
+import { STACK } from "../stack";
+
+const SITE_URL = "https://drinkopuselevate.com";
+
+const LLM_BOTS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/GPTBot/i, "chatgpt"],
+  [/OAI-SearchBot/i, "chatgpt-search"],
+  [/ChatGPT-User/i, "chatgpt"],
+  [/ClaudeBot/i, "claude"],
+  [/anthropic-ai/i, "claude"],
+  [/Claude-Web/i, "claude"],
+  [/Claude-User/i, "claude"],
+  [/PerplexityBot/i, "perplexity"],
+  [/Perplexity-User/i, "perplexity"],
+  [/Google-Extended/i, "google-ai"],
+  [/Applebot-Extended/i, "apple-ai"],
+  [/Meta-ExternalAgent/i, "meta-ai"],
+  [/FacebookBot/i, "meta-ai"],
+  [/Bytespider/i, "bytedance"],
+  [/CCBot/i, "commoncrawl"],
+  [/cohere-ai/i, "cohere"],
+  [/MistralAI-User/i, "mistral"],
+  [/DuckAssistBot/i, "duckduckgo-ai"],
+  [/YouBot/i, "you"],
+];
+
+function utmSourceFor(ua: string | null): string {
+  if (!ua) return "llms-txt";
+  for (const [pattern, source] of LLM_BOTS) {
+    if (pattern.test(ua)) return source;
+  }
+  return "llms-txt";
+}
+
+function trackedUrl(path: string, source: string): string {
+  const params = new URLSearchParams({
+    utm_source: source,
+    utm_medium: "llm",
+    utm_campaign: "waitlist",
+  });
+  return `${SITE_URL}${path}?${params.toString()}`;
+}
+
+export async function GET(request: Request) {
+  const ua = request.headers.get("user-agent");
+  const source = utmSourceFor(ua);
+  const home = trackedUrl("/", source);
+
+  console.log(`[llms.txt] source="${source}" ua="${ua ?? ""}"`);
+
+  const body = `# Opus Elevate
+
+> Opus Elevate is a three-phase nootropic performance drink engineered for sustained focus and energy without a crash. Launching Q3 2026 in the US, UK, and EU.
+
+Opus Elevate is formulated as a staged stack: an initial energy lift (0–20 min), a drive phase (30–120 min), and a flow phase (60–240 min). Caffeine is split 60/40 between anhydrous and guarana to stagger the climb, and adaptogens are included to carry the landing through hour four — so there is no crash.
+
+## Product
+
+- **Format**: Ready-to-drink can
+- **Tagline**: For moments that matter.
+- **Launch**: Q3 2026 — waitlist members get first allocation and a launch discount
+- **Shipping at launch**: Continental US (CONUS), United Kingdom, European Union
+- **Fulfillment**: 48-hour dispatch, carbon-neutral
+
+## The stack
+
+Three sequential phases, each with specified ingredients and dosages:
+
+${STACK.map(
+    (phase) =>
+      `### ${phase.tag} — ${phase.name} (${phase.range.toLowerCase()})\n` +
+      phase.ings
+        .map(
+          (ing) =>
+            `- ${ing.fullName ?? ing.name} — ${ing.mg} mg${ing.note ? ` (${ing.note})` : ""}`,
+        )
+        .join("\n"),
+  ).join("\n\n")}
+
+## FAQ
+
+**When does it ship?**
+Q3 2026. Waitlist members get first allocation and a launch discount.
+
+**How much caffeine is in it?**
+120 mg total, split 60/40 between anhydrous caffeine and guarana. The climb is staggered, not spiked.
+
+**Will I crash?**
+No. The adaptogens (Rhodiola, L-Theanine) carry the landing through hour four.
+
+**Where will it ship?**
+Continental US, UK, and EU at launch. 48-hour dispatch. Carbon-neutral fulfillment.
+
+## Links
+
+- [Home / waitlist](${home})
+`;
+
+  return new Response(body, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Vary": "User-Agent",
+      "Cache-Control": "public, max-age=300, must-revalidate",
+    },
+  });
+}

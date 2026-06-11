@@ -2,7 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-export type WaitlistState = {
+export type JoinWaitlistResult = {
   ok: boolean;
   message: string;
 };
@@ -10,9 +10,9 @@ export type WaitlistState = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function joinWaitlist(
-  _prev: WaitlistState,
+  _prev: JoinWaitlistResult,
   formData: FormData,
-): Promise<WaitlistState> {
+): Promise<JoinWaitlistResult> {
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
@@ -21,7 +21,7 @@ export async function joinWaitlist(
     return { ok: false, message: "Please enter a valid email." };
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) {
     return { ok: false, message: "Server is misconfigured." };

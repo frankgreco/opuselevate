@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Opus Elevate — website
 
-## Getting Started
+Marketing/waitlist site for Opus Elevate, a three-phase nootropic performance drink. Next.js (App Router) + GSAP ScrollTrigger + Tailwind 4.
 
-First, run the development server:
+## Develop
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev    # http://localhost:3000
+npm run build  # production build
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Waitlist submissions need a `.env.local` with `SUPABASE_URL` and `SUPABASE_SECRET_KEY` (server-only; never exposed to the client).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `app/components/Elevate.tsx` — the whole homepage: a pinned, scroll-scrubbed hero (can rotation painted to a single `<canvas>`), three ingredient "beats", then the waitlist form.
+- `app/stack.ts` — single source of truth for phases/ingredients/dosages (rendered in the hero and published via `/llms.txt`).
+- `app/can-frames.ts` — manifest for the 100 rotation frames in `public/can/transparent-spin/`.
+- `app/actions/waitlist.ts` — server action; upserts into the Supabase `waitlist` table.
+- `app/logo/` — experimental 3D-glass wordmark (stakeholder review; see comments).
+- `assets/can/` — source material (greenscreen masters, opaque frames, label art). Version-controlled, **not** deployed — only `public/` ships.
 
-## Learn More
+## Hard-won constraints (do not regress)
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- The can rotation must stay on **one canvas** — mounting frames as stacked `<img>` layers crashed iOS Safari (per-tab memory ceiling).
+- iOS safe-area/toolbar bleed is deliberate and fragile: see comments in `globals.css`, `Starfield.tsx`, and `Elevate.tsx` before touching viewport sizing.
+- See `AGENTS.md`: this Next.js version may differ from what you expect — check `node_modules/next/dist/docs/` before writing code.

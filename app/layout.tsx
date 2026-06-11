@@ -9,14 +9,18 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+const DESCRIPTION =
+  "A three-phase nootropic performance drink engineered for sustained focus and energy without a crash. For moments that matter. Launching Q3 2026 — join the waitlist.";
+
 export const metadata: Metadata = {
   title: "Opus Elevate",
-  description: "",
+  description: DESCRIPTION,
   metadataBase: new URL("https://drinkopuselevate.com"),
   openGraph: {
     title: "Opus Elevate",
-    description: "",
+    description: DESCRIPTION,
     type: "website",
+    siteName: "Opus Elevate",
   },
   robots: { index: true, follow: true },
 };
@@ -49,7 +53,6 @@ export default function RootLayout({
             serializes the snippet into the RSC payload, too late to help.) The
             in-effect reset in Elevate then only handles same-document nav. */}
         <script
-          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html:
               "if('scrollRestoration' in history){history.scrollRestoration='manual';}window.scrollTo(0,0);",

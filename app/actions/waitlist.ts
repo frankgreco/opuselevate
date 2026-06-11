@@ -2,7 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-export type WaitlistState = {
+export type JoinWaitlistResult = {
   ok: boolean;
   message: string;
 };
@@ -10,9 +10,9 @@ export type WaitlistState = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function joinWaitlist(
-  _prev: WaitlistState,
+  _prev: JoinWaitlistResult,
   formData: FormData,
-): Promise<WaitlistState> {
+): Promise<JoinWaitlistResult> {
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();

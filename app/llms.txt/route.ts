@@ -1,3 +1,5 @@
+import { STACK } from "../stack";
+
 const SITE_URL = "https://drinkopuselevate.com";
 
 const LLM_BOTS: ReadonlyArray<readonly [RegExp, string]> = [
@@ -64,18 +66,16 @@ Opus Elevate is formulated as a staged stack: an initial energy lift (0–20 min
 
 Three sequential phases, each with specified ingredients and dosages:
 
-### 01 — Energy (0–20 min)
-- Caffeine — 120 mg (60/40 anhydrous and guarana)
-- Taurine — 750 mg
-- Acetyl-L-Carnitine (ALCAR) — 500 mg
-
-### 02 — Drive (30–120 min)
-- L-Tyrosine — 500 mg
-- Rhodiola — 300 mg
-
-### 03 — Flow (60–240 min)
-- L-Theanine — 200 mg
-- Alpha-GPC — 300 mg
+${STACK.map(
+    (phase) =>
+      `### ${phase.tag} — ${phase.name} (${phase.range.toLowerCase()})\n` +
+      phase.ings
+        .map(
+          (ing) =>
+            `- ${ing.fullName ?? ing.name} — ${ing.mg} mg${ing.note ? ` (${ing.note})` : ""}`,
+        )
+        .join("\n"),
+  ).join("\n\n")}
 
 ## FAQ
 

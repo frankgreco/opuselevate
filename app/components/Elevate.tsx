@@ -4,47 +4,14 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { Waitlist, type WaitlistState } from "./Waitlist";
+import { Waitlist } from "./Waitlist";
 import { Starfield } from "./Starfield";
 import { CAN_FRAMES } from "../can-frames";
 import { GlassMeshPanel } from "../logo/GlassMeshPanel";
 import { buildElevateDataUrl } from "../logo/buildSdf";
+import { STACK } from "../stack";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
-
-const STACK = [
-  {
-    tag: "01",
-    name: "Energy",
-    range: "0–20 MIN",
-    ings: [
-      ["Caffeine", "120"],
-      ["Taurine", "750"],
-      ["ALCAR", "500"],
-    ],
-    hue: "#d97a4a",
-  },
-  {
-    tag: "02",
-    name: "Drive",
-    range: "30–120 MIN",
-    ings: [
-      ["L-Tyrosine", "500"],
-      ["Rhodiola", "300"],
-    ],
-    hue: "#a8843e",
-  },
-  {
-    tag: "03",
-    name: "Flow",
-    range: "60–240 MIN",
-    ings: [
-      ["L-Theanine", "200"],
-      ["Alpha-GPC", "300"],
-    ],
-    hue: "#5a8a9e",
-  },
-] as const;
 
 const CN: CSSProperties = { fontFamily: "var(--font-cn)" };
 const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
@@ -153,10 +120,7 @@ function HeroGlassLogo() {
 }
 
 export function Elevate() {
-  const [waitlist, setWaitlist] = useState<WaitlistState>({
-    submitted: false,
-    position: null,
-  });
+  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
   // TEMPORARY: stakeholder toggle between the flat SVG logo and the 3D-glass one.
   // Defaults to flat; the button flips to glass.
   const [glassLogo, setGlassLogo] = useState(false);
@@ -208,6 +172,15 @@ export function Elevate() {
         }
         window.scrollTo(0, 0);
       }
+
+      // Honour prefers-reduced-motion (same mount-time check as Starfield):
+      // autonomous motion (entry fades, the backlight breathing pulse) is
+      // skipped; the scroll timeline stays — it's user-driven scrubbing, and
+      // it's the only way to reach the beats/waitlist — but tracks the
+      // scroll position directly instead of easing toward it.
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
 
       // iOS: showing/hiding the Safari toolbar resizes the visual viewport,
       // which makes ScrollTrigger recompute the pin-spacer and jump the pinned
@@ -350,7 +323,7 @@ export function Elevate() {
             start: "top top",
             end: "+=600%",
             pin: true,
-            scrub: 1,
+            scrub: reduceMotion ? true : 1,
             anticipatePin: 1,
           },
         });
@@ -368,11 +341,9 @@ export function Elevate() {
           0,
         );
 
-        // [0.08 → 0.30] Rise: can lifts + grows. 4-frame angle morph:
-        // topdown → tilt22 → tilt10 → front (each crossfade between
-        // adjacent ~10° angle deltas, smooth perspective shift).
-        // FromTo with explicit FROM locks in the responsive HERO pose
-        // per breakpoint (set by gsap.matchMedia).
+        // [0.08 → 0.30] Rise: can lifts + grows, while the frame morph below
+        // tilts the camera topdown → front. FromTo with explicit FROM locks
+        // in the HERO pose so scrolling back up always restores it.
         tl.fromTo(
           canStageRef.current,
           { bottom: HERO_BOTTOM, height: HERO_HEIGHT },
@@ -504,35 +475,41 @@ export function Elevate() {
       buildScrollTl();
 
       // 4) Mount entrance: a short fade-in for the topdown can + logo.
-      // No spin, no descent — the page starts at hero rest.
-      const entry = gsap.timeline();
-      entry.to(canvasRef.current, { autoAlpha: 1, duration: 0.7, ease: "power2.out" }, 0);
-      // Backlight blooms in a touch slower/softer than the can itself.
-      entry.to(
-        backlightRef.current,
-        { autoAlpha: 1, duration: 1.1, ease: "power2.out" },
-        0,
-      );
-      entry.to(
-        logoRef.current,
-        { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
-        0.15,
-      );
+      // No spin, no descent — the page starts at hero rest. Under reduced
+      // motion, snap straight to the rest state (no fades, no breathing).
+      if (reduceMotion) {
+        gsap.set([canvasRef.current, backlightRef.current], { autoAlpha: 1 });
+        gsap.set(logoRef.current, { autoAlpha: 1, y: 0 });
+      } else {
+        const entry = gsap.timeline();
+        entry.to(canvasRef.current, { autoAlpha: 1, duration: 0.7, ease: "power2.out" }, 0);
+        // Backlight blooms in a touch slower/softer than the can itself.
+        entry.to(
+          backlightRef.current,
+          { autoAlpha: 1, duration: 1.1, ease: "power2.out" },
+          0,
+        );
+        entry.to(
+          logoRef.current,
+          { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
+          0.15,
+        );
 
-      // Slow breathing on the backlight so the glow feels alive rather than a
-      // static decal. Driven on scale (transform) so it never fights the
-      // autoAlpha fade that owns the halo's opacity.
-      gsap.fromTo(
-        backlightRef.current,
-        { scale: 1 },
-        {
-          scale: 1.105,
-          duration: 2,
-          ease: "sine.inOut",
-          repeat: -1,
-          yoyo: true,
-        },
-      );
+        // Slow breathing on the backlight so the glow feels alive rather than
+        // a static decal. Driven on scale (transform) so it never fights the
+        // autoAlpha fade that owns the halo's opacity.
+        gsap.fromTo(
+          backlightRef.current,
+          { scale: 1 },
+          {
+            scale: 1.105,
+            duration: 2,
+            ease: "sine.inOut",
+            repeat: -1,
+            yoyo: true,
+          },
+        );
+      }
     },
     { scope: root },
   );
@@ -694,11 +671,6 @@ export function Elevate() {
           {/* Backlight — a soft halo behind the can. The rotation frames are
               transparent, so this glow spills around the can's silhouette (the
               opaque can masks its bright centre), reading as a backlit rim that
-              lifts the can off the black void. Lives inside the can stage, so it
-              tracks the can as it rises and grows on scroll. */}
-          {/* Backlight — a soft halo behind the can. The rotation frames are
-              transparent, so this glow spills around the can's silhouette (the
-              opaque can masks its bright centre), reading as a backlit rim that
               lifts the can off the black void. Lives inside the can stage so it
               tracks the can as it rises and grows; faded in via GSAP autoAlpha
               and breathes via the GSAP scale pulse above. */}
@@ -793,7 +765,7 @@ export function Elevate() {
                   minWidth: "min(280px, 70vw)",
                 }}
               >
-                {beat.ings.map(([name, mg]) => (
+                {beat.ings.map(({ name, mg }) => (
                   <div
                     key={name}
                     style={{
@@ -868,10 +840,8 @@ export function Elevate() {
         >
           <div style={{ display: "inline-block" }}>
             <Waitlist
-              state={waitlist}
-              onSubmitted={(position) =>
-                setWaitlist({ submitted: true, position })
-              }
+              submitted={waitlistSubmitted}
+              onSubmitted={() => setWaitlistSubmitted(true)}
               inputId="waitlist-email"
             />
           </div>

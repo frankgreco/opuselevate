@@ -26,6 +26,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Baseline security headers, all routes. No CSP for now — the inline
+        // scroll-restoration <script> in layout.tsx would need a nonce/hash.
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      {
         source: "/fonts/:path*",
         headers: [
           {

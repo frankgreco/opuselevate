@@ -3,14 +3,9 @@
 import { useState, useTransition, type CSSProperties } from "react";
 import { joinWaitlist } from "../actions/waitlist";
 
-export type WaitlistState = {
-  submitted: boolean;
-  position: number | null;
-};
-
 type WaitlistProps = {
-  state: WaitlistState;
-  onSubmitted: (position: number) => void;
+  submitted: boolean;
+  onSubmitted: () => void;
   inputId?: string;
 };
 
@@ -19,17 +14,7 @@ const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 // Gold tier accent (Drive) — used for the success headline.
 const ACCENT = "#a8843e";
 
-const BASE_POSITION = 2106;
-
-function hashEmail(email: string): number {
-  let h = 0;
-  for (let i = 0; i < email.length; i++) {
-    h = (h * 31 + email.charCodeAt(i)) >>> 0;
-  }
-  return BASE_POSITION + (h % 400);
-}
-
-export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
+export function Waitlist({ submitted, onSubmitted, inputId }: WaitlistProps) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -47,12 +32,12 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
         setError(result.message);
         return;
       }
-      onSubmitted(hashEmail(value.toLowerCase()));
+      onSubmitted();
     });
   }
 
   // Success — squared panel matching the facts-label card.
-  if (state.submitted && state.position !== null) {
+  if (submitted) {
     return (
       <div
         style={{
@@ -90,9 +75,7 @@ export function Waitlist({ state, onSubmitted, inputId }: WaitlistProps) {
             color: "var(--dim)",
           }}
         >
-          Position{" "}
-          <span style={{ color: "var(--silver)" }}>#{state.position}</span>{" "}
-          of {state.position + 84}. We&rsquo;ll write before launch.
+          You&rsquo;re on the list. We&rsquo;ll write before launch.
         </div>
       </div>
     );

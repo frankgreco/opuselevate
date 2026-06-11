@@ -13,11 +13,11 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { SVGLoader } from "three/addons/loaders/SVGLoader.js";
-import { LOGO_ASPECT } from "./chromeShader";
 
 // logo.svg viewBox.
 const VB_W = 339.66;
 const VB_H = 128.15;
+const LOGO_ASPECT = VB_W / VB_H;
 
 /** High-contrast studio environment: bright light blobs + bars on near-black.
  *  Glass needs strong light/dark contrast to refract — a uniform soft env just
@@ -94,10 +94,10 @@ export function GlassMeshPanel({
     let geometry: THREE.ExtrudeGeometry | null = null;
     let disposed = false;
 
-    // Box (in px) the full logo occupies, centered — matches the Elevate overlay.
-    const boxH = height * 0.8;
-    const boxW = boxH * LOGO_ASPECT;
-    const s = boxW / VB_W; // svg units → px
+    // svg units → px scale for the full logo box (height * 0.8, centered —
+    // matches the Elevate overlay). Read live from the container so resizes
+    // only rescale the mesh; the renderer/scene are built once per mount.
+    const meshScale = () => (container.clientHeight * 0.8 * LOGO_ASPECT) / VB_W;
 
     fetch("/logo.svg")
       .then((r) => r.text())
@@ -138,10 +138,37 @@ export function GlassMeshPanel({
 
         mesh = new THREE.Mesh(geometry, material);
         // Flip y (svg y-down → three y-up) and scale svg units → px.
+        const s = meshScale();
         mesh.scale.set(s, -s, s);
         group.add(mesh);
+        // The mesh arrives async — repaint if the loop has already gone idle
+        // (reduced motion / offscreen), so the glass isn't blank.
+        requestRender();
       })
       .catch((e) => console.warn("[3D glass] load failed:", e));
+
+    // Honour prefers-reduced-motion: hold the shimmer at t=0. The loop stops
+    // after each paint; mesh load / visibility / resize request a one-shot
+    // re-render so the static pose stays correct.
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    let visible = true;
+    let raf = 0;
+    const start = performance.now();
+    const frame = () => {
+      const t = reduceMotion ? 0 : (performance.now() - start) / 1000;
+      // Gentle shimmer + drifting environment so the refraction flows (liquid feel).
+      group.rotation.y = Math.sin(t * 0.4) * 0.12;
+      group.rotation.x = Math.sin(t * 0.31) * 0.06;
+      scene.environmentRotation.y = t * 0.18;
+      renderer.render(scene, camera);
+      raf = visible && !reduceMotion ? requestAnimationFrame(frame) : 0;
+    };
+    const requestRender = () => {
+      if (raf === 0) raf = requestAnimationFrame(frame);
+    };
 
     const resize = () => {
       const w = container.clientWidth;
@@ -152,33 +179,25 @@ export function GlassMeshPanel({
       camera.top = h / 2;
       camera.bottom = -h / 2;
       camera.updateProjectionMatrix();
+      if (mesh) {
+        const s = meshScale();
+        mesh.scale.set(s, -s, s);
+      }
+      // setSize clears the canvas; repaint even when the loop is idle.
+      requestRender();
     };
     const ro = new ResizeObserver(resize);
     ro.observe(container);
     resize();
 
-    let visible = true;
     const io = new IntersectionObserver(
       ([entry]) => {
         visible = entry.isIntersecting;
-        if (visible && raf === 0) raf = requestAnimationFrame(frame);
+        if (visible) requestRender();
       },
       { threshold: 0 },
     );
     io.observe(container);
-
-    let raf = 0;
-    const start = performance.now();
-    const frame = () => {
-      const t = (performance.now() - start) / 1000;
-      // Gentle shimmer + drifting environment so the refraction flows (liquid feel).
-      group.rotation.y = Math.sin(t * 0.4) * 0.12;
-      group.rotation.x = Math.sin(t * 0.31) * 0.06;
-      scene.environmentRotation.y = t * 0.18;
-      renderer.render(scene, camera);
-      raf = visible ? requestAnimationFrame(frame) : 0;
-    };
-    raf = requestAnimationFrame(frame);
 
     return () => {
       disposed = true;
@@ -194,7 +213,10 @@ export function GlassMeshPanel({
       renderer.forceContextLoss();
       canvas.remove();
     };
-  }, [height]);
+    // Mount-only: resizes (including the `height` prop changing) are handled
+    // by the ResizeObserver above — rebuilding the WebGL context per height
+    // change churned context create/destroy on mobile URL-bar show/hide.
+  }, []);
 
   // Flat Elevate overlay — same centered full-logo box as the mesh.
   const boxH = height * 0.8;

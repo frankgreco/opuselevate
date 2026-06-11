@@ -21,6 +21,9 @@ Waitlist submissions need a `.env.local` with `SUPABASE_URL` and `SUPABASE_SECRE
 - `app/actions/waitlist.ts` — server action; upserts into the Supabase `waitlist` table.
 - `app/logo/` — experimental 3D-glass wordmark (stakeholder review; see comments).
 - `assets/can/` — source material (greenscreen masters, opaque frames, label art). Version-controlled, **not** deployed — only `public/` ships.
+- `scripts/render-label.mjs` — renders the can's side-panel label art from `app/stack.ts` (typo-proof by construction) to a high-res PNG via headless Chrome.
+- `scripts/key-greenscreen.mjs` — chroma-keys greenscreen imagery to transparent AVIF/PNG (HSV hue key + silver-lid brightness gate + despill).
+- `public/can/side-moments.avif` — transparent side-panel still for the beat zoom. Generated with GPT Image 2 (seeded with the deployed can's front frame + `assets/can/labels/panel-moments-v2.png`), then keyed via `scripts/key-greenscreen.mjs`. Greenscreen master: `assets/can/_source/can-side-moments-greenscreen-v2.png`.
 
 ## Hard-won constraints (do not regress)
 

@@ -59,6 +59,38 @@ const BEAT_MODES: BeatMode[] = [
   { name: "Fade", enterScale: 1, exitScale: 1, enterY: 40, exitY: -40, enterBlur: 8, exitBlur: 8 },
 ];
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+
+// Beat zoom (stakeholder ask): while the three beats run, the canvas
+// crossfades from the front pose to a still of the can's side panel and
+// pushes in on the label block for the active beat (ENERGY → DRIVE → FLOW),
+// so the can itself presents the three modes. Toggled via the top-right
+// control. The still (GPT Image 2, seeded with the deployed can + the
+// stack.ts-rendered label art) is chroma-keyed to transparent like the
+// rotation frames (scripts/key-greenscreen.mjs) so the backlight halo reads
+// through. Master: assets/can/_source/can-side-moments-greenscreen-v2.png.
+const SIDE_PANEL_SRC = "/can/side-moments.avif";
+// Per-beat focus points on the side still: normalized image coords + zoom.
+// Measured on the 2480×3312 still (can spans x 0.18–0.82, blocks centred at
+// y ≈ .34/.57/.79). Zooms are gentle (stakeholder: tighter was "way too
+// zoomed in") — with the 2:3 buffer the window keeps the can's silhouette
+// edges in frame up to z ≈ 1.38; past that it goes interior-only and reads
+// as a flat photo crop instead of a magnified can.
+const SIDE_FOCUS = [
+  { x: 0.5, y: 0.34, z: 1.35 }, // ENERGY block (+ tagline above)
+  { x: 0.5, y: 0.57, z: 1.38 }, // DRIVE block
+  { x: 0.5, y: 0.79, z: 1.35 }, // FLOW block (+ bottom rim below)
+];
+// The can's body spans these normalized y bounds in the side still. When a
+// zoom window edge lands between them it's cutting the can mid-body, so that
+// edge gets a fade-to-transparent band (blends into the page's black)
+// instead of a hard line.
+const SIDE_CAN_TOP = 0.06;
+const SIDE_CAN_BOTTOM = 0.936;
+// Between beats the window pulls back out to here (nearly the whole can)
+// before pushing in on the next block — an out-and-back-in move (stakeholder
+// ask) rather than a flat pan at constant zoom.
+const SIDE_Z_MID = 1.08;
 
 // Shared pill style for the (temporary) top-right stakeholder controls.
 const PILL: CSSProperties = {
@@ -137,6 +169,18 @@ export function Elevate() {
     // immediately, not only on the next scroll tick.
     reapplyBeatsRef.current?.();
   }, [beatMode]);
+  // Stakeholder toggle: zoom into the can's side-panel label during the
+  // beats. Defaults on (their ask); the off state is the previous behaviour
+  // (static front can) for comparison.
+  const [canZoom, setCanZoom] = useState(true);
+  const canZoomRef = useRef(true);
+  const repaintCanRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    canZoomRef.current = canZoom;
+    // Repaint the canvas at the current scroll state so the toggle reads
+    // immediately, not only on the next scroll tick.
+    repaintCanRef.current?.();
+  }, [canZoom]);
 
   const root = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -207,14 +251,42 @@ export function Elevate() {
       const isReady = (im?: HTMLImageElement) =>
         !!im && im.complete && im.naturalWidth > 0;
 
+      // Side-panel still for the beat zoom — same off-DOM pattern as the
+      // rotation frames (only ever painted to the one canvas, never mounted).
+      const sideImg = new Image();
+      sideImg.decoding = "async";
+      sideImg.src = SIDE_PANEL_SRC;
+      // Rack-focus spotlight (stakeholder direction): during the beats the
+      // can renders dimmed and soft-blurred everywhere EXCEPT a soft-edged
+      // spotlight tracking the active label block, so only the focused
+      // section reads — the neighbouring blocks fall to near-black instead
+      // of competing. dimCanvas pre-renders once (downscale-bounce blur +
+      // black wash; no ctx.filter, which iOS Safari only gained recently);
+      // spotCanvas re-masks the sharp layer each paint. Both are off-DOM
+      // scratch canvases — the on-page canvas stays singular.
+      let dimCanvas: HTMLCanvasElement | null = null;
+      let spotCanvas: HTMLCanvasElement | null = null;
+
+      // Scroll-driven canvas state. The rise tween scrubs `frameState.i`
+      // through the rotation; the beat-zoom tweens scrub `sideState`
+      // (crossfade mix + zoom window). One painter composites both, so any
+      // scrub position — forwards or backwards — repaints consistently.
+      const frameState = { i: 0 };
+      const sideState = {
+        mix: 0,
+        x: SIDE_FOCUS[0].x,
+        y: SIDE_FOCUS[0].y,
+        z: 1,
+      };
+
       let bufferSized = false;
-      let lastDrawn = -1;
-      const drawFrame = (idx: number) => {
+      const lastPaint = { i: -1, mix: -1, x: -1, y: -1, z: -1 };
+      const paintCan = () => {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext("2d");
         if (!canvas || !ctx) return;
         const n = images.length;
-        let i = Math.min(n - 1, Math.max(0, Math.round(idx)));
+        let i = Math.min(n - 1, Math.max(0, Math.round(frameState.i)));
         let img = images[i];
         // Fast scroll can outrun decode; fall back to the nearest decoded
         // frame so the canvas never flashes blank.
@@ -226,23 +298,151 @@ export function Elevate() {
         }
         if (!isReady(img)) return;
         if (!bufferSized) {
-          // Backing store = source resolution; the element is scaled to the
-          // stage box via CSS object-fit (matching the old <img> contain).
+          // Backing store matches the stage box's 2:3 aspect, NOT the 3:4
+          // frames: with a 3:4 buffer, object-fit:contain letterboxed the
+          // paint inside the taller stage, so the beat zoom was cut off in
+          // bands and could never reach the top of the viewport. The
+          // rotation frames draw contain-style inside the buffer instead
+          // (width-fit, centred below) — identical on-screen geometry to
+          // the old buffer, while the zoom window can fill the full stage.
           canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
+          canvas.height = Math.round((img.naturalWidth * 3) / 2);
           bufferSized = true;
         }
-        if (i === lastDrawn) return;
-        // Frames carry alpha (transparent background), so clear before each
-        // paint to avoid the previous frame ghosting through.
+        // The zoom toggle gates the side layer here (not in the timeline) so
+        // flipping it mid-beat repaints instantly; until the still decodes,
+        // the front pose simply stays up (no blank flash).
+        const mix = canZoomRef.current && isReady(sideImg) ? sideState.mix : 0;
+        const { x, y, z } = sideState;
+        if (
+          i === lastPaint.i &&
+          mix === lastPaint.mix &&
+          (mix === 0 ||
+            (x === lastPaint.x && y === lastPaint.y && z === lastPaint.z))
+        )
+          return;
+        Object.assign(lastPaint, { i, mix, x, y, z });
+        // Both layers carry alpha (transparent background), so clear before
+        // each paint to avoid the previous state ghosting through.
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        lastDrawn = i;
+        if (mix < 1) {
+          // Front pose dissolves out as the side panel dissolves in — drawing
+          // it under the side layer at full alpha would leave its silhouette
+          // peeking around the zoomed panel's edges. Centred in the taller
+          // buffer (see buffer sizing above).
+          ctx.globalAlpha = 1 - mix;
+          ctx.drawImage(
+            img,
+            0,
+            (canvas.height - img.naturalHeight) / 2,
+            canvas.width,
+            img.naturalHeight,
+          );
+        }
+        if (mix > 0) {
+          // Map a zoomed source window — cover-fit, centred on the focus
+          // point, clamped inside the still — onto the full backing store.
+          const iw = sideImg.naturalWidth;
+          const ih = sideImg.naturalHeight;
+          const cover = Math.max(canvas.width / iw, canvas.height / ih);
+          const winW = canvas.width / (cover * z);
+          const winH = canvas.height / (cover * z);
+          const sx = clamp(x * iw - winW / 2, 0, iw - winW);
+          const sy = clamp(y * ih - winH / 2, 0, ih - winH);
+
+          if (!dimCanvas || !spotCanvas) {
+            // Dim base layer, built once: the still at half res, blurred by
+            // bouncing through a 1/12-scale buffer, then washed toward black
+            // (source-atop keeps the keyed background transparent).
+            dimCanvas = document.createElement("canvas");
+            dimCanvas.width = Math.round(iw / 2);
+            dimCanvas.height = Math.round(ih / 2);
+            const tiny = document.createElement("canvas");
+            tiny.width = Math.max(1, Math.round(iw / 12));
+            tiny.height = Math.max(1, Math.round(ih / 12));
+            tiny.getContext("2d")?.drawImage(sideImg, 0, 0, tiny.width, tiny.height);
+            const dctx = dimCanvas.getContext("2d");
+            if (dctx) {
+              dctx.drawImage(tiny, 0, 0, dimCanvas.width, dimCanvas.height);
+              dctx.globalCompositeOperation = "source-atop";
+              dctx.fillStyle = "rgba(0,0,0,0.75)";
+              dctx.fillRect(0, 0, dimCanvas.width, dimCanvas.height);
+            }
+            spotCanvas = document.createElement("canvas");
+            spotCanvas.width = canvas.width;
+            spotCanvas.height = canvas.height;
+          }
+
+          // 1) Dim, blurred can across the whole window.
+          ctx.globalAlpha = mix;
+          ctx.drawImage(
+            dimCanvas,
+            sx / 2, sy / 2, winW / 2, winH / 2,
+            0, 0, canvas.width, canvas.height,
+          );
+          // 2) Sharp layer, masked to a soft spotlight around the focus
+          // point (the same x/y the pan tweens drive, mapped through the
+          // window — so the spotlight glides down the can with the scroll).
+          const sctx = spotCanvas.getContext("2d");
+          if (sctx) {
+            sctx.globalCompositeOperation = "source-over";
+            sctx.clearRect(0, 0, spotCanvas.width, spotCanvas.height);
+            sctx.drawImage(sideImg, sx, sy, winW, winH, 0, 0, spotCanvas.width, spotCanvas.height);
+            const cx = ((x * iw - sx) / winW) * spotCanvas.width;
+            const cy = ((y * ih - sy) / winH) * spotCanvas.height;
+            // Sized to one block: the solid core covers icon + name +
+            // ingredient list, and alpha hits zero right about where the
+            // next block's icon starts — the neighbours live only in the
+            // dim layer ("only the current section reads" — stakeholder).
+            const r = spotCanvas.height * 0.24;
+            const spot = sctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+            spot.addColorStop(0, "rgba(0,0,0,1)");
+            spot.addColorStop(0.55, "rgba(0,0,0,1)");
+            spot.addColorStop(1, "rgba(0,0,0,0)");
+            sctx.globalCompositeOperation = "destination-in";
+            sctx.fillStyle = spot;
+            sctx.fillRect(0, 0, spotCanvas.width, spotCanvas.height);
+            ctx.drawImage(spotCanvas, 0, 0);
+          }
+          ctx.globalAlpha = 1;
+          // Window edges that cut the can mid-body dissolve into the page's
+          // black: erase alpha through a gradient band at that edge. Edges
+          // that show the can's own top/bottom (or its transparent margin)
+          // stay crisp — fading those would melt the real silhouette.
+          const band = canvas.height * 0.1;
+          const fadeEdge = (top: boolean) => {
+            const y0 = top ? 0 : canvas.height;
+            const y1 = top ? band : canvas.height - band;
+            const g = ctx.createLinearGradient(0, y0, 0, y1);
+            g.addColorStop(0, "rgba(0,0,0,1)");
+            g.addColorStop(1, "rgba(0,0,0,0)");
+            ctx.globalCompositeOperation = "destination-out";
+            ctx.fillStyle = g;
+            ctx.fillRect(0, Math.min(y0, y1), canvas.width, band);
+            ctx.globalCompositeOperation = "source-over";
+          };
+          if (sy / ih > SIDE_CAN_TOP + 0.005) fadeEdge(true);
+          if ((sy + winH) / ih < SIDE_CAN_BOTTOM - 0.005) fadeEdge(false);
+        }
+        ctx.globalAlpha = 1;
+      };
+      // Let the React zoom toggle repaint whatever the scroll state shows.
+      repaintCanRef.current = () => {
+        lastPaint.i = -1;
+        paintCan();
       };
 
       // Paint the rest-pose frame as soon as it decodes (entry fades it in).
-      if (isReady(images[0])) drawFrame(0);
-      else images[0].addEventListener("load", () => drawFrame(0), { once: true });
+      if (isReady(images[0])) paintCan();
+      else images[0].addEventListener("load", () => paintCan(), { once: true });
+
+      // Handle to the entry timeline's logo fade-in (assigned below). The
+      // scroll timeline's logo fade-out kills it on first scroll: both tweens
+      // own the logo's alpha, and if a fast scroll outruns the 0.85s entry,
+      // the time-based tween finishes last and parks the logo at full
+      // opacity over the beats (nothing re-renders it until the user scrubs
+      // back through the top of the timeline).
+      let logoEntryTween: gsap.core.Tween | null = null;
 
       // Backlight tint proxy. The halo behind the can is cool-white on the home
       // screen, then morphs to each beat's hue while that beat is shown and back
@@ -325,6 +525,16 @@ export function Elevate() {
             pin: true,
             scrub: reduceMotion ? true : 1,
             anticipatePin: 1,
+            // First scrolled pixel: the scroll timeline owns the logo from
+            // here, so retire the entry fade-in (see logoEntryTween). Done
+            // here, not in the logo tween's onStart — a scrubbed jump can
+            // skip straight past the tween with its callbacks suppressed.
+            onUpdate: (self) => {
+              if (self.progress > 0.001 && logoEntryTween) {
+                logoEntryTween.kill();
+                logoEntryTween = null;
+              }
+            },
           },
         });
 
@@ -360,7 +570,6 @@ export function Elevate() {
         // first → last and paint it to the canvas. With ~100 frames each step
         // is a tiny camera-tilt delta, so the scrubbed swap reads as a smooth
         // perspective shift (video-like) rather than discrete jumps.
-        const frameState = { i: 0 };
         tl.to(
           frameState,
           {
@@ -368,9 +577,77 @@ export function Elevate() {
             duration: 0.18, // xfade window 0.12 → 0.30
             ease: "none",
             immediateRender: false,
-            onUpdate: () => drawFrame(frameState.i),
+            onUpdate: paintCan,
           },
           0.12,
+        );
+
+        // [0.30 → 0.94] Beat zoom: as the rise settles, the canvas dissolves
+        // from the front pose to the side-panel still while pushing in on the
+        // ENERGY block; the window pans down to DRIVE and FLOW in the gaps
+        // between beats, then pulls back out to the front pose just before
+        // the waitlist. All scrubbed, so scrolling back up reverses each step.
+        tl.to(
+          sideState,
+          {
+            mix: 1,
+            z: SIDE_FOCUS[0].z,
+            duration: 0.06,
+            immediateRender: false,
+            onUpdate: paintCan,
+          },
+          0.3,
+        );
+        // Between beats: pan to the next block while the zoom dips out to
+        // SIDE_Z_MID and pushes back in — out-and-back-in, not a flat pan.
+        [
+          { to: SIDE_FOCUS[1], at: 0.5 },
+          { to: SIDE_FOCUS[2], at: 0.7 },
+        ].forEach(({ to, at }) => {
+          tl.to(
+            sideState,
+            {
+              x: to.x,
+              y: to.y,
+              duration: 0.08,
+              immediateRender: false,
+              onUpdate: paintCan,
+            },
+            at,
+          );
+          tl.to(
+            sideState,
+            {
+              z: SIDE_Z_MID,
+              duration: 0.04,
+              ease: "power1.in",
+              immediateRender: false,
+              onUpdate: paintCan,
+            },
+            at,
+          );
+          tl.to(
+            sideState,
+            {
+              z: to.z,
+              duration: 0.04,
+              ease: "power1.out",
+              immediateRender: false,
+              onUpdate: paintCan,
+            },
+            at + 0.04,
+          );
+        });
+        tl.to(
+          sideState,
+          {
+            mix: 0,
+            z: 1,
+            duration: 0.05,
+            immediateRender: false,
+            onUpdate: paintCan,
+          },
+          0.89,
         );
 
         // [0.34 → 0.94] Three beats, edge-to-edge (no overlap). Each beat's
@@ -489,11 +766,14 @@ export function Elevate() {
           { autoAlpha: 1, duration: 1.1, ease: "power2.out" },
           0,
         );
-        entry.to(
-          logoRef.current,
-          { autoAlpha: 1, y: 0, duration: 0.7, ease: "power2.out" },
-          0.15,
-        );
+        logoEntryTween = gsap.to(logoRef.current, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.7,
+          ease: "power2.out",
+          paused: true,
+        });
+        entry.add(logoEntryTween.play(), 0.15);
 
         // Slow breathing on the backlight so the glow feels alive rather than
         // a static decal. Driven on scale (transform) so it never fights the
@@ -573,6 +853,13 @@ export function Elevate() {
           style={PILL}
         >
           Beats: {BEAT_MODES[beatMode].name}
+        </button>
+        <button
+          type="button"
+          onClick={() => setCanZoom((z) => !z)}
+          style={PILL}
+        >
+          Can Zoom: {canZoom ? "On" : "Off"}
         </button>
       </div>
 

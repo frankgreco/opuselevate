@@ -24,6 +24,7 @@
 import sharp from "sharp";
 import { mkdirSync } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 // Green band (degrees). The studio greenscreen sits ~100–150°; the band is
 // wide so despill-tinted shadow pixels still fall inside it.
@@ -39,33 +40,15 @@ const S_HIGH = 0.3;
 const V_PROTECT = 0.82;
 const S_PROTECT = 0.22;
 
-const args = process.argv.slice(2);
-const inputs = [];
-let outDir = null;
-let format = "avif";
-let quality = 60;
-for (let i = 0; i < args.length; i++) {
-  if (args[i] === "--out") outDir = args[++i];
-  else if (args[i] === "--format") format = args[++i];
-  else if (args[i] === "--quality") quality = Number(args[++i]);
-  else inputs.push(args[i]);
-}
-if (!inputs.length) {
-  console.error("usage: node scripts/key-greenscreen.mjs <input...> [--out dir] [--format avif|png] [--quality N]");
-  process.exit(1);
-}
-
 const smoothstep = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
 };
 
-async function keyFile(input) {
-  const { data, info } = await sharp(input)
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-
+// Chroma-key a raw RGBA buffer IN PLACE (same algorithm described above).
+// Exported so the slice pipeline (scripts/slice-spin.mjs) can key extracted
+// frames without re-implementing the key or shelling out per frame.
+export function keyRgbaInPlace(data) {
   for (let p = 0; p < data.length; p += 4) {
     const r = data[p] / 255;
     const g = data[p + 1] / 255;
@@ -95,6 +78,18 @@ async function keyFile(input) {
       if (data[p + 1] > cap) data[p + 1] = cap;
     }
   }
+  return data;
+}
+
+// Key a single image file and write it (avif/png) to outDir (or alongside the
+// input). Returns the written path.
+export async function keyFile(input, { outDir = null, format = "avif", quality = 60 } = {}) {
+  const { data, info } = await sharp(input)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  keyRgbaInPlace(data);
 
   const stem = basename(input, extname(input));
   const dir = outDir ?? dirname(input);
@@ -103,7 +98,33 @@ async function keyFile(input) {
   let img = sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } });
   img = format === "png" ? img.png() : img.avif({ quality, effort: 6 });
   await img.toFile(out);
-  console.log(`keyed ${input} -> ${out}`);
+  return out;
 }
 
-for (const input of inputs) await keyFile(input);
+// CLI entry: key one or more files. (Guarded so importing this module for its
+// exports doesn't run the CLI.)
+async function main() {
+  const args = process.argv.slice(2);
+  const inputs = [];
+  let outDir = null;
+  let format = "avif";
+  let quality = 60;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--out") outDir = args[++i];
+    else if (args[i] === "--format") format = args[++i];
+    else if (args[i] === "--quality") quality = Number(args[++i]);
+    else inputs.push(args[i]);
+  }
+  if (!inputs.length) {
+    console.error("usage: node scripts/key-greenscreen.mjs <input...> [--out dir] [--format avif|png] [--quality N]");
+    process.exit(1);
+  }
+  for (const input of inputs) {
+    const out = await keyFile(input, { outDir, format, quality });
+    console.log(`keyed ${input} -> ${out}`);
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}

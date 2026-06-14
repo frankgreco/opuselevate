@@ -25,11 +25,12 @@ const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 //   ZOOM_ORIGIN — transform-origin (panel-face centre on the can stage).
 const ZOOM_SCALE = 4.4;
 const ZOOM_ORIGIN = "50% 44%";
-// Centre the can vertically as it zooms. It rests in the upper PIN band, so
-// scaling alone leaves it high with empty space below. setZoom adds a translateY
-// of (A − B·s) vh (derived: keeps the can centre at ~50vh across the zoom),
-// ramped in past s≈1 so it doesn't jump from the resting position. Tuned in-browser.
-const ZOOM_CENTER_A = 24;
+// Keep the can vertically centred as it zooms. The PIN rest is already centred
+// (~50vh), but scaling about the 44%-high origin drifts the can centre downward,
+// so setZoom adds a translateY of (A − B·s) vh that counters the drift and holds
+// the centre at ~50vh across the zoom — ramped in past s≈1 so it doesn't jump
+// from the resting position. Tuned in-browser.
+const ZOOM_CENTER_A = 4;
 const ZOOM_CENTER_B = 4;
 const ZOOM_CENTER_RAMP_END = 1.22; // scale by which the centring is fully engaged
 
@@ -60,9 +61,11 @@ const PILL: CSSProperties = {
 // (vh/svh often stop above the toolbar on recent Safari.)
 const HERO_BOTTOM = "-54vh";
 const HERO_HEIGHT = "110vh";
-// Top-anchored (front view): large front can dominating the upper portion
-// of the viewport, leaving room for beat content below.
-const PIN_BOTTOM = "32vh";
+// Front/panel view: the can rises to sit CENTERED in the viewport. (It used to
+// be top-anchored to leave room for the ENERGY/DRIVE/FLOW beat text below the
+// can; those DOM blocks are gone, so the can now centers — a 68vh box centered
+// in 100vh sits 16vh off each edge.)
+const PIN_BOTTOM = "16vh";
 const PIN_HEIGHT = "68vh";
 
 // TEMPORARY (stakeholder review): the 3D-glass wordmark from /logo, sized to sit

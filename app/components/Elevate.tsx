@@ -3,16 +3,11 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useRef, useState } from "react";
 import { Waitlist } from "./Waitlist";
-import { Starfield } from "./Starfield";
 import { CAN_FRAMES, FRAME_COUNT } from "../can-frames";
-import { GlassMeshPanel } from "../logo/GlassMeshPanel";
-import { buildElevateDataUrl } from "../logo/buildSdf";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
-
-const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 
 // Homepage hero: a pinned, scroll-scrubbed can rotation painted to a single <canvas>.
 // The can frames are built from the real green-screen sources. EVERYTHING the user
@@ -21,21 +16,6 @@ const MONO: CSSProperties = { fontFamily: "var(--font-mono)" };
 // then DRIVE, then FLOW build on the blank can one at a time — is baked into the frames
 // (public/can). There is NO CSS zoom and NO DOM text overlay: the page only scrubs
 // frameState.i across CAN_FRAMES (see app/can-frames.ts).
-
-const PILL: CSSProperties = {
-  ...MONO,
-  fontSize: 11,
-  letterSpacing: ".12em",
-  textTransform: "uppercase",
-  color: "#fff",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.22)",
-  borderRadius: 999,
-  padding: "8px 14px",
-  cursor: "pointer",
-  backdropFilter: "blur(8px)",
-  WebkitBackdropFilter: "blur(8px)",
-};
 
 // Hero rest pose (top-down can peeking from the bottom) → pinned pose (can centered).
 const HERO_BOTTOM = "-54vh";
@@ -50,35 +30,8 @@ const END_BOTTOM = "34vh";
 // form in that gap. Tuned against the rendered can.
 const CAN_END_VISUAL_BOTTOM = "58vh";
 
-// TEMPORARY (stakeholder review): the 3D-glass wordmark from /logo in the hero.
-function HeroGlassLogo() {
-  const boxRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(0);
-  const [elevateUrl, setElevateUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    const el = boxRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setHeight(el.clientHeight));
-    ro.observe(el);
-    buildElevateDataUrl()
-      .then(setElevateUrl)
-      .catch((e) => console.warn("[hero glass logo] failed:", e));
-    return () => ro.disconnect();
-  }, []);
-
-  return (
-    <div ref={boxRef} style={{ width: "min(560px, 92vw)", height: "min(220px, 34vw)" }}>
-      {height > 0 && <GlassMeshPanel elevateUrl={elevateUrl} height={height} />}
-    </div>
-  );
-}
-
 export function Elevate() {
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
-  // TEMPORARY stakeholder toggles (kept to match the current site).
-  const [glassLogo, setGlassLogo] = useState(false);
-  const [showStarfield, setShowStarfield] = useState(false);
 
   const root = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -297,29 +250,6 @@ export function Elevate() {
         overflowY: "visible",
       }}
     >
-      {showStarfield && <Starfield />}
-
-      {/* TEMPORARY stakeholder controls (top-right). */}
-      <div
-        style={{
-          position: "fixed",
-          top: 16,
-          right: 16,
-          zIndex: 50,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          gap: 8,
-        }}
-      >
-        <button type="button" onClick={() => setShowStarfield((s) => !s)} style={PILL}>
-          Stars: {showStarfield ? "On" : "Off"}
-        </button>
-        <button type="button" onClick={() => setGlassLogo((g) => !g)} style={PILL}>
-          Logo: {glassLogo ? "Glass" : "Flat"}
-        </button>
-      </div>
-
       <div
         ref={stageRef}
         style={{
@@ -344,23 +274,19 @@ export function Elevate() {
             willChange: "opacity, transform",
           }}
         >
-          {glassLogo ? (
-            <HeroGlassLogo />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src="/logo.svg"
-              alt="Opus Elevate"
-              style={{
-                display: "block",
-                width: "min(480px, max(84vw, 290px))",
-                height: "auto",
-                userSelect: "none",
-                pointerEvents: "none",
-              }}
-              draggable={false}
-            />
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.svg"
+            alt="Opus Elevate"
+            style={{
+              display: "block",
+              width: "min(480px, max(84vw, 290px))",
+              height: "auto",
+              userSelect: "none",
+              pointerEvents: "none",
+            }}
+            draggable={false}
+          />
         </div>
 
         {/* Can stage */}

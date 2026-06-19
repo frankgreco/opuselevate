@@ -23,7 +23,16 @@ import { STACK } from "../app/stack.ts";
 
 const CHROME =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const OUT = resolve(import.meta.dirname, "../assets/can/labels/panel-moments-v2.png");
+
+// CLI flags (optional): --out <path> overrides the output PNG; --no-tagline drops
+// the "FOR MOMENTS THAT MATTER." header. The /v2 can has no tagline (it reveals one
+// phase at a time at the settle), so its reference art is rendered with --no-tagline.
+const argv = process.argv.slice(2);
+const outArg = argv.includes("--out") ? argv[argv.indexOf("--out") + 1] : null;
+const NO_TAGLINE = argv.includes("--no-tagline");
+const OUT = outArg
+  ? resolve(process.cwd(), outArg)
+  : resolve(import.meta.dirname, "../assets/can/labels/panel-moments-v2.png");
 
 // Art canvas: same 454:1090 aspect as the approved panel art, at 2× CSS px
 // (and 2× device scale below, so the PNG lands at 4× the original).
@@ -117,7 +126,10 @@ const html = `<!doctype html>
   }
 </style></head>
 <body>
-  <div class="tagline">FOR MOMENTS THAT MATTER.</div>
+  <!-- When --no-tagline, the tagline is hidden but KEEPS its box, so the ENERGY/
+       DRIVE/FLOW blocks stay in their exact full-panel positions (no reflow up).
+       This matches the /v2 end reveal: tagline gone, phases in the same spots. -->
+  <div class="tagline"${NO_TAGLINE ? ' style="visibility:hidden"' : ""}>FOR MOMENTS THAT MATTER.</div>
   ${STACK.map(block).join("\n")}
 </body></html>`;
 

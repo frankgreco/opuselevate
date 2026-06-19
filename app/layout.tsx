@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { CAN_FRAMES } from "./can-frames";
 
@@ -79,7 +80,10 @@ export default function RootLayout({
             memory on load (and crashing iOS Safari). */}
         <link rel="preload" href={CAN_FRAMES[0]} as="image" type="image/avif" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }

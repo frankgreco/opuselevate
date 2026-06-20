@@ -26,13 +26,14 @@ import { join } from "node:path";
 import { keyRgbaInPlace } from "./key-greenscreen.mjs";
 
 const argv = process.argv.slice(2);
-const opt = { out: "public/can/transparent-spin", count: 240, quality: 58, seamHead: 1, seamTail: 1 };
+const opt = { out: "public/can/transparent-spin", count: 240, quality: 58, seamHead: 1, seamTail: 1, outWidth: 0 };
 for (let i = 0; i < argv.length; i++) {
   if (argv[i] === "--out") opt.out = argv[++i];
   else if (argv[i] === "--count") opt.count = Number(argv[++i]);
   else if (argv[i] === "--quality") opt.quality = Number(argv[++i]);
   else if (argv[i] === "--seam-head") opt.seamHead = Number(argv[++i]);
   else if (argv[i] === "--seam-tail") opt.seamTail = Number(argv[++i]);
+  else if (argv[i] === "--out-width") opt.outWidth = Number(argv[++i]); // downscale at encode only
 }
 
 const W = 1248, H = 1664;
@@ -116,7 +117,12 @@ try {
   const previewTiles = [];
   for (let i = 0; i < idxs.length; i++) {
     const data = await producers[idxs[i]]();
-    await sharp(data, { raw: { width: W, height: H, channels: 4 } }).avif({ quality: opt.quality, effort: 4 }).toFile(join(opt.out, `frame-${String(i).padStart(3, "0")}.avif`));
+    // Keying/normalization all ran at full W×H so the can is computed identically to
+    // the source; downscale only at the final encode (the hero renders at ~400–500px
+    // CSS wide, so 960px still covers 2× retina). Aspect is preserved (W:H = 3:4).
+    const enc = sharp(data, { raw: { width: W, height: H, channels: 4 } });
+    if (opt.outWidth && opt.outWidth < W) enc.resize(opt.outWidth);
+    await enc.avif({ quality: opt.quality, effort: 4 }).toFile(join(opt.out, `frame-${String(i).padStart(3, "0")}.avif`));
     if (previewIdx.has(i)) { const tile = await sharp(data, { raw: { width: W, height: H, channels: 4 } }).resize(140, 187, { fit: "contain" }).png().toBuffer(); previewTiles.push({ i, tile }); }
   }
   const cell = 140;

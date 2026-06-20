@@ -68,15 +68,45 @@ export function Elevate() {
         ScrollTrigger.normalizeScroll(true);
       }
 
-      // 0) Load the frames as off-DOM Image objects. Only the current frame is ever
-      // painted, so decoded-image memory is bounded by the browser cache.
-      const images = CAN_FRAMES.map((src) => {
+      // 0) Frames load as off-DOM Image objects, painted one at a time (decoded-image
+      // memory stays bounded by the browser cache). They're fetched PROGRESSIVELY — a
+      // small low-priority window filled front-to-back — instead of firing all ~320
+      // requests (≈16MB) at mount. The old all-at-once flood saturated the network on
+      // first load, delaying the hero's first paint and starving the critical JS/fonts,
+      // and it spiked decode memory (an iOS Safari risk). Scrub order is linear 0→last,
+      // so front-to-back loading matches consumption order; the painter already falls
+      // back to the nearest decoded frame if a fast scroll outruns the loader.
+      const images = CAN_FRAMES.map(() => {
         const img = new Image();
         img.decoding = "async";
-        img.src = src;
         return img;
       });
       imagesRef.current = images;
+
+      const LOAD_WINDOW = 8; // max concurrent frame fetches
+      let nextToLoad = 0;
+      let inFlight = 0;
+      const pumpLoads = () => {
+        while (inFlight < LOAD_WINDOW && nextToLoad < images.length) {
+          const idx = nextToLoad++;
+          const img = images[idx];
+          inFlight++;
+          const onSettled = () => {
+            inFlight--;
+            pumpLoads();
+          };
+          img.addEventListener("load", onSettled, { once: true });
+          img.addEventListener("error", onSettled, { once: true });
+          // Frame 0 is also <link rel=preload> in <head>; everything after it is
+          // background work that must yield to the critical JS/fonts/first frame.
+          if ("fetchPriority" in img) {
+            (img as HTMLImageElement & { fetchPriority: string }).fetchPriority =
+              idx === 0 ? "high" : "low";
+          }
+          img.src = CAN_FRAMES[idx];
+        }
+      };
+      pumpLoads();
 
       const isReady = (im?: HTMLImageElement) => !!im && im.complete && im.naturalWidth > 0;
 

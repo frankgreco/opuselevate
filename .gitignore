@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# can-frame assembler preview montage (dev-only; never ship it in /public)
+_contactsheet.png

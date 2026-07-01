@@ -1,0 +1,13 @@
+Take the matte-black drink can in the FIRST image and print the white label design from the SECOND image onto its front face. This is an edit: preserve the first image exactly and only add the printed label.
+
+Wrap the text and icons naturally around the cylindrical can with realistic perspective, following the can's existing matte finish, soft studio lighting and subtle gloss. The condensation water droplets must stay in their exact positions and sit IN FRONT OF / over the printed label wherever they overlap, as if the print is under the wet droplets.
+
+Keep IDENTICAL to the first image: the can shape and size, the silver top and bottom rims, the solid green background, the lighting, and every single water droplet. Do NOT move, restyle, or regenerate the can. Only ADD the white printed label content.
+
+Label layout, centered on the front face, top to bottom:
+- "FOR MOMENTS THAT MATTER." in a monospace Courier-style font, near the top.
+- a 9-ray sparkle / starburst icon, then "ENERGY", then CAFFEINE / TAURINE / ALCAR.
+- a rounded double-chevron fast-forward icon (two solid play triangles, »»), then "DRIVE", then TYROSINE / RHODIOLA.
+- a three-petal icon (one tall pointed center petal flanked by two shorter rounded oval petals), then "FLOW", then THEANINE / ALPHA GPC.
+
+The mode names (ENERGY, DRIVE, FLOW) are plain Helvetica; the tagline and ingredient names are monospace Courier. Reproduce the three icon shapes EXACTLY as drawn in the second image. Keep all text crisp, legible, pure white, and sized like a real printed can label. Photographic, high detail, realistic product photo.
